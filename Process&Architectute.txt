@@ -377,7 +377,6 @@ the app (it re-creates everything automatically).
   AI_MODEL                 the model name, e.g. qwen/qwen3.8-27b
   GOOGLE_CLIENT_ID         Google OAuth client id (empty until you add
   GOOGLE_CLIENT_SECRET     your Google Cloud Console credentials)
-  SESSION_SECRET           cookie secret (change in production)
   NEXT_PUBLIC_APP_URL      the app's public address, used for the
                            Google redirect URL and links
 

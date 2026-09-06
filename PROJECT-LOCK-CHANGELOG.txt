@@ -566,3 +566,45 @@ NEW ISSUES DISCOVERED: image uploads carry no text (tracked as
   (tracked as PL-023).
 NEW SUGGESTIONS CREATED: PL-023, PL-024.
 FINAL STATUS: All three user items shipped; PL-008 COMPLETED.
+=====================================================================
+ENTRY #16 — PL-012: Remove dead SESSION_SECRET configuration
+=====================================================================
+DATE: 2026-09-06
+SUGGESTION ID: PL-012
+TITLE: SESSION_SECRET env var is dead configuration
+
+WHAT WAS FOUND: SESSION_SECRET was present in .env and .env.example
+  and documented in README.md and Process&Architectute.txt, but read
+  nowhere in src (git grep across tracked files). Sessions actually
+  use 32-byte random DB-backed tokens via hashToken().
+
+WHAT WAS CHANGED: Removed the variable and its comment line from
+  .env and .env.example, and removed the documentation bullets from
+  README.md and Process&Architectute.txt. No code changes were needed
+  or made — the honest minimal fix per the suggestion's own
+  recommendation.
+
+FILES/MODULES AFFECTED: .env, .env.example, README.md,
+  Process&Architectute.txt (docs/config only).
+
+WHY THE CHANGE WAS MADE: Dead configuration misleads operators into
+  thinking rotation matters. A hashing pepper was deliberately NOT
+  introduced instead: session tokens are already unguessable, so a
+  pepper would add complexity without security value (rule 15).
+
+TESTS PERFORMED: git grep confirms zero references in tracked files
+  (excluding the backlog's historical record); npm run lint clean;
+  tsc --noEmit clean; 37/37 vitest; next build OK; smoke 14/14
+  (exercises real session-cookie flows: login, app pages, logout).
+
+VERIFICATION RESULT: All gates green; no behavioral change possible
+  since the variable was never read.
+
+REGRESSION CHECK: Smoke's authenticated page checks all passed with
+  the variable absent — nothing at boot or runtime expected it.
+
+NEW ISSUES DISCOVERED: none.
+NEW SUGGESTIONS CREATED: none.
+FINAL STATUS: PL-012 COMPLETED. Next unblocked per priority:
+  PL-015 (PDF syllabus import), which can reuse the extraction
+  service added in the materials feature.

@@ -121,7 +121,6 @@ See `.env.example`. The only ones that matter for local development:
 
 - `DATABASE_URL` — defaults to `file:./data/studypilot.db`
 - `AI_API_KEY` / `AI_PROVIDER` / `AI_MODEL` / `AI_BASE_URL` — **optional**. `openai` accepts any OpenAI-compatible endpoint (OpenRouter, Groq, Together, llama.cpp, …). Leave empty to run fully on the built-in engine.
-- `SESSION_SECRET` — set a long random value in production.
 - `NEXT_PUBLIC_APP_URL` — app origin for absolute links.
 
 ---

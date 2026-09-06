@@ -324,7 +324,7 @@ SUGGESTION ID: PL-012
 TITLE: SESSION_SECRET env var is dead configuration
 CATEGORY: Maintainability / Config hygiene
 PRIORITY: P4 — Low
-CURRENT STATUS: PENDING
+CURRENT STATUS: COMPLETED (2026-09-06)
 CURRENT IMPLEMENTATION STATE: SESSION_SECRET appears in .env and
   .env.example but is referenced nowhere in src (verified by grep).
 PROBLEM: Dead env vars mislead operators into thinking rotation matters
@@ -336,6 +336,13 @@ EXPECTED BENEFIT: Configuration tells the truth.
 DEPENDENCIES: none
 RISK: Minimal. Note: removing it invalidates nothing (it was never
   read).
+IMPLEMENTATION NOTES: Completed via removal (the honest minimal
+  change). Verified across .env, .env.example, README.md, and
+  Process&Architectute.txt; zero references remain in tracked files.
+  Sessions remain DB-backed 32-byte random tokens (unchanged); a hash
+  pepper was deliberately NOT added — tokens are unguessable, so a
+  pepper would be security theater. Full gate suite green after the
+  change.
 SCOPE: .env.example, README env table.
 VERIFICATION METHOD: grep clean; gates green.
 UPGRADE OPPORTUNITY: —
@@ -570,14 +577,14 @@ UPGRADE OPPORTUNITY: —
 IMPLEMENTATION NOTES: —
 ---------------------
 
-BACKLOG SUMMARY (2026-09-06, after UI/session/materials feature pass +
-  PL-008 streaming — CI green on 506562a)
+BACKLOG SUMMARY (2026-09-06, after loop iteration 5 — PL-012)
   COMPLETED:                PL-001, PL-002, PL-003, PL-004, PL-005,
                             PL-006, PL-007, PL-008, PL-010, PL-011,
-                            PL-013
+                            PL-012, PL-013
   PENDING:                  PL-009 (blocked: needs connection string),
-                            PL-012, PL-014 … PL-022, PL-023, PL-024
-  NEXT UP (per priority):   PL-012 (P3) → PL-023 (P3)
+                            PL-014 … PL-022, PL-023, PL-024
+  NEXT UP (per priority):   PL-015 (P3, PDF syllabus import — reuses
+                            the new extraction service)
   BLOCKED / EXTERNAL INPUT: PL-009 (Postgres URL), PL-014 (channel +
                             provider account), PL-017 (GitHub app)
 =====================================================================
