@@ -570,12 +570,57 @@ UPGRADE OPPORTUNITY: —
 IMPLEMENTATION NOTES: —
 ---------------------
 
-BACKLOG SUMMARY (2026-09-06, after loop iteration 4 — CI green)
+BACKLOG SUMMARY (2026-09-06, after UI/session/materials feature pass +
+  PL-008 streaming — CI green on 506562a)
   COMPLETED:                PL-001, PL-002, PL-003, PL-004, PL-005,
-                            PL-006, PL-007, PL-010, PL-011, PL-013
-  PENDING:                  PL-009 (blocked: needs connection string)
-                            string), PL-012, PL-014 … PL-022
-  NEXT UP (per priority):   PL-008 (P3) → PL-012 (P3)
+                            PL-006, PL-007, PL-008, PL-010, PL-011,
+                            PL-013
+  PENDING:                  PL-009 (blocked: needs connection string),
+                            PL-012, PL-014 … PL-022, PL-023, PL-024
+  NEXT UP (per priority):   PL-012 (P3) → PL-023 (P3)
   BLOCKED / EXTERNAL INPUT: PL-009 (Postgres URL), PL-014 (channel +
                             provider account), PL-017 (GitHub app)
+=====================================================================
+
+---------------------
+SUGGESTION ID: PL-023
+TITLE: Semantic (embedding-based) search over uploaded study materials
+CATEGORY: AI / Data
+PRIORITY: P3 — Medium
+CURRENT STATUS: PENDING
+CURRENT IMPLEMENTATION STATE: NOT IMPLEMENTED — materials reach the
+  model as the first 8 excerpts by recency; relevance to the current
+  question is not measured.
+PROBLEM: With many uploads, the model may not see the excerpt that
+  actually answers the question.
+PROPOSED IMPROVEMENT: Embed material chunks at upload time and rank by
+  cosine similarity to the user message before building context.
+EXPECTED BENEFIT: Grounded answers stay accurate as the library grows.
+DEPENDENCIES: An embeddings endpoint on the chosen provider.
+RISK: Low — additive; recency-based selection remains the fallback.
+SCOPE: extraction service + chat context builder.
+VERIFICATION METHOD: Ask a question answerable only from an older
+  upload; assert the correct excerpt is selected.
+UPGRADE OPPORTUNITY: —
+IMPLEMENTATION NOTES: —
+---------------------
+SUGGESTION ID: PL-024
+TITLE: OCR for image uploads (photo-of-textbook path)
+CATEGORY: AI / UX
+PRIORITY: P4 — Low
+CURRENT STATUS: PENDING
+CURRENT IMPLEMENTATION STATE: Image uploads are stored and previewable
+  but contribute no text to Pilot's context (honestly documented in
+  the extraction service).
+PROBLEM: A photo of a textbook page produces no grounded material.
+PROPOSED IMPROVEMENT: Route images through an OCR step (provider vision
+  endpoint or tesseract.js) during extraction.
+EXPECTED BENEFIT: The photo-of-notes workflow becomes genuinely useful.
+DEPENDENCIES: OCR capability choice; storage of extracted text.
+RISK: Medium — accuracy varies; needs a manual-review affordance.
+SCOPE: src/lib/services/extract.ts + upload action.
+VERIFICATION METHOD: Upload a legible photo; assert extracted text
+  appears in the materials list.
+UPGRADE OPPORTUNITY: —
+IMPLEMENTATION NOTES: —
 =====================================================================

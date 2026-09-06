@@ -518,3 +518,51 @@ REGRESSION CHECK: Server-action path kept as fallback (action still
 NEW ISSUES DISCOVERED: none open.
 NEW SUGGESTIONS CREATED: none.
 FINAL STATUS: PL-008 COMPLETED.
+=====================================================================
+ENTRY #15 — Feature pass: UI redesign, Pilot robustness, materials,
+            chat sessions (+ PL-008 streaming recorded in ENTRY #14)
+=====================================================================
+DATE: 2026-09-06
+SUGGESTION ID: (feature request — 3-item user brief) + PL-008
+TITLE: Artistic-minimal UI refresh; general-purpose Pilot; syllabus
+       file uploads with grounded AI; session-based chat
+
+WHAT WAS FOUND: Landing used centered hero + Inter + indigo/violet
+  gradients (the exact patterns the taste-skill/impeccable guides flag
+  as the generic AI look); Pilot misrouted broad queries to the tutor
+  intent, had no conversation memory, and surfaced provider errors as
+  dead ends; no file-upload path existed; chat always resumed the
+  newest conversation with no session concept.
+
+WHAT WAS CHANGED: Design tokens (cobalt + cream identity, Outfit/
+  Inter Tight), asymmetric hero, 18 gradient marks replaced with the
+  single cobalt identity, avatar palette, mock dashboard colors;
+  intent-order fix + memory + retry/fallback in the router; materials
+  table + extraction service (pdf-parse/mammoth/xlsx) + upload/delete
+  actions + syllabus materials panel; chat sessions (fresh per login,
+  past-sessions drawer, wrap-up on logout); SSE streaming chat
+  (detailed in ENTRY #14).
+
+FILES/MODULES AFFECTED: globals.css, layout.tsx, page.tsx, error.tsx,
+  not-found.tsx, auth pages, app-shell, chat-view, onboarding-wizard,
+  avatar.tsx, ai/router.ts, ai/types.ts, ai/provider.ts, api/chat/
+  route.ts (new), db/schema.ts + 2 migrations, services/chat.ts,
+  services/extract.ts (new), actions/{chat,sessions,materials}.ts
+  (2 new), syllabus page, materials-panel.tsx (new).
+
+TESTS PERFORMED: tsc clean; eslint 0; 37/37 vitest; build OK;
+  smoke 14/14; landing QA in headless Chrome (0 console errors, 0
+  horizontal overflow, hero/CTA visible, desktop + 390px mobile);
+  live STREAM E2E (349 deltas, first token 7ms).
+
+VERIFICATION RESULT: All gates green locally; GitHub Actions run
+  34034551317 on push 506562a: completed / success.
+
+REGRESSION CHECK: Smoke covers all app pages; dialog/theme primitives
+  were not touched this pass; full suite re-run after every stage.
+
+NEW ISSUES DISCOVERED: image uploads carry no text (tracked as
+  PL-024); material selection is recency-based, not semantic
+  (tracked as PL-023).
+NEW SUGGESTIONS CREATED: PL-023, PL-024.
+FINAL STATUS: All three user items shipped; PL-008 COMPLETED.
