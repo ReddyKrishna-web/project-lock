@@ -412,3 +412,50 @@ NEW SUGGESTIONS CREATED: none (repo separation is a user action, not a
   code change; noted in the backlog summary).
 FINAL STATUS: PARTIALLY COMPLETED — workflow shipped; live run pending push.
 =====================================================================
+
+ENTRY #13
+DATE: 2026-09-06
+SUGGESTION ID: PL-010 (completion) + repo push
+TITLE: Push to GitHub; live CI run watched to green
+
+WHAT WAS FOUND: User provided the repo URL
+  (github.com/ReddyKrishna-web/project-lock). Pre-flight audit before
+  staging found two .gitignore gaps (venv/, QA browser profile
+  patterns) — fixed before anything was staged. Staged tree audited:
+  secret scan over all staged content (Groq/OpenAI/Google key patterns)
+  came back clean; .idea/ IDE config excluded and ignored. 119 files
+  committed on main and pushed.
+
+WHAT WAS CHANGED: Commit 1df62a5 (full app + governance + CI), then
+  fix commit 163b785: sqlite busy_timeout=10000 pragma.
+
+FILES/MODULES AFFECTED: .gitignore, .github/workflows/ci.yml,
+  package.json, package-lock.json, src/lib/db/index.ts, entire src/.
+
+WHY THE CHANGE WAS MADE: PL-010's live-run dependency. The busy_timeout
+  fix: CI's first run failed at Build with "SqliteError: database is
+  locked" — on a fresh checkout, Next's parallel build workers all open
+  the empty DB and race the first-time migration + demo seeding;
+  local builds never hit it because the DB was already seeded (no
+  writes → no race). Root cause read from the real CI job log via the
+  authenticated API.
+
+TESTS PERFORMED: git check-ignore audit of env/db/venv/node_modules/
+  profiles BEFORE staging; staged-content secret scan; fresh-clone
+  repro (clone → npm ci → build) on Windows passed, isolating the
+  failure to the empty-DB Linux path; after fix: tsc, 37/37 tests,
+  build, smoke 14/14 locally, then pushed and WATCHED the Actions run.
+
+VERIFICATION RESULT: CI run 34028826433 (first push) = failure at
+  Build; CI run 34029152014 (after fix) = SUCCESS — every step green
+  (lint, typecheck, tests, build, smoke). Verified via GitHub API.
+
+REGRESSION CHECK: full local gate suite green after the pragma change;
+  CI green on the fix commit itself.
+
+NEW ISSUES DISCOVERED: none open. (Note for PL-009: Postgres migration
+  will remove the SQLite writer-contention class entirely.)
+NEW SUGGESTIONS CREATED: none.
+FINAL STATUS: PL-010 flipped to COMPLETED. Repo:
+  https://github.com/ReddyKrishna-web/project-lock
+=====================================================================

@@ -266,9 +266,9 @@ SUGGESTION ID: PL-010
 TITLE: CI pipeline (GitHub Actions): typecheck + tests + build + smoke on every push
 CATEGORY: DevOps / Quality
 PRIORITY: P2 — High
-CURRENT STATUS: PARTIALLY COMPLETED (2026-09-06, loop iteration 4) —
-  workflow shipped and locally validated; live runner run NOT VERIFIED
-  until the project is pushed as its own GitHub repo (see DEPENDENCIES).
+CURRENT STATUS: COMPLETED (2026-09-06, loop iteration 4) — project
+  pushed to github.com/ReddyKrishna-web/project-lock, run #34029152014
+  GREEN (all steps success) on commit 163b785.
 CURRENT IMPLEMENTATION STATE: NOT IMPLEMENTED — no .github directory
   (verified). All gates run manually.
 PROBLEM: Verification currently depends on discipline; regressions can
@@ -563,16 +563,12 @@ UPGRADE OPPORTUNITY: —
 IMPLEMENTATION NOTES: —
 ---------------------
 
-BACKLOG SUMMARY (2026-09-06, after loop iteration 4)
+BACKLOG SUMMARY (2026-09-06, after loop iteration 4 — CI green)
   COMPLETED:                PL-001, PL-002, PL-003, PL-004, PL-005,
-                            PL-006, PL-007, PL-011, PL-013
-  PARTIALLY COMPLETED:      PL-010 (workflow shipped + locally
-                            validated; live run needs the project
-                            pushed to GitHub as its own repo)
+                            PL-006, PL-007, PL-010, PL-011, PL-013
   PENDING:                  PL-008, PL-009 (blocked: needs connection
                             string), PL-012, PL-014 … PL-022
   NEXT UP (per priority):   PL-008 (P3) → PL-012 (P3)
   BLOCKED / EXTERNAL INPUT: PL-009 (Postgres URL), PL-014 (channel +
-                            provider account), PL-017 (GitHub app),
-                            PL-010 live run (needs push to GitHub)
+                            provider account), PL-017 (GitHub app)
 =====================================================================
