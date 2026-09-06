@@ -73,7 +73,7 @@ const PAGE_TITLES: Record<string, string> = {
 function Brand() {
   return (
     <Link href="/app" className="flex items-center gap-2.5 px-1">
-      <span className="flex h-8.5 w-8.5 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 text-white shadow-md shadow-indigo-500/30">
+      <span className="flex h-8.5 w-8.5 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-primary/25">
         <Rocket className="h-4.5 w-4.5" />
       </span>
       <span className="text-[15px] font-bold tracking-tight">
@@ -168,7 +168,7 @@ export function AppShell({
       <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-3 border-b border-border glass px-4 lg:pl-[260px] lg:pr-6">
         <div className="flex items-center gap-3">
           <Link href="/app" className="lg:hidden">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-white">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white">
               <Rocket className="h-4 w-4" />
             </span>
           </Link>

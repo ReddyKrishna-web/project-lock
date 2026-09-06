@@ -192,7 +192,7 @@ export function OnboardingWizard() {
       {generating ? (
         <Card>
           <CardBody className="flex flex-col items-center py-14 text-center">
-            <span className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white animate-float">
+            <span className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-white animate-float">
               <Sparkles className="h-8 w-8" />
             </span>
             <div className="space-y-2">
@@ -219,7 +219,7 @@ export function OnboardingWizard() {
             {/* WELCOME */}
             {step === 0 && (
               <div className="py-6 text-center">
-                <span className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 text-white pop-shadow">
+                <span className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-primary text-white pop-shadow">
                   <Rocket className="h-10 w-10" />
                 </span>
                 <h1 className="text-2xl font-bold tracking-tight">Welcome to StudyPilot</h1>

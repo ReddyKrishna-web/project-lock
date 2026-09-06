@@ -10,6 +10,7 @@ import { hashPassword, verifyPassword } from "./password";
 import { createSession, destroySession, getSessionUser } from "./session";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { clientIpFromHeaders, retryMinutes } from "@/lib/security/request-key";
+import { closeActiveSession } from "@/lib/services/chat";
 
 /**
  * NAT-friendly brute-force limits (PL-013): the user may share one LAN IP,
@@ -127,6 +128,11 @@ export async function loginAction(_prev: AuthState, formData: FormData): Promise
 }
 
 export async function logoutAction(): Promise<void> {
+  const user = await currentUser();
+  if (user) {
+    // Wrap up the chat session so it appears in the student's history.
+    await closeActiveSession(user.id);
+  }
   await destroySession();
   redirect("/");
 }

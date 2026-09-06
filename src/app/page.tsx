@@ -21,9 +21,9 @@ import { cn } from "@/lib/utils";
 
 function MockDashboard() {
   const blocks = [
-    { time: "09:00", subject: "DSA", topic: "Graph Traversal", minutes: "45m", color: "#5753d4", reason: "Exam in 23 days" },
-    { time: "11:00", subject: "DBMS", topic: "Normalization", minutes: "50m", color: "#8b5cf6", reason: "Exam in 13 days" },
-    { time: "15:00", subject: "OS", topic: "Scheduling", minutes: "40m", color: "#0ea5e9", reason: "High-priority subject" },
+    { time: "09:00", subject: "DSA", topic: "Graph Traversal", minutes: "45m", color: "#0b57d0", reason: "Exam in 23 days" },
+    { time: "11:00", subject: "DBMS", topic: "Normalization", minutes: "50m", color: "#2f6fd6", reason: "Exam in 13 days" },
+    { time: "15:00", subject: "OS", topic: "Scheduling", minutes: "40m", color: "#5a8fd8", reason: "High-priority subject" },
   ];
   return (
     <div className="pop-shadow relative mx-auto w-full max-w-3xl overflow-hidden rounded-3xl border border-border bg-card">
@@ -166,7 +166,7 @@ export default function LandingPage() {
       <header className="sticky top-0 z-40 border-b border-border glass">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
           <Link href="/" className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 text-white shadow-md shadow-indigo-500/30">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-primary/25">
               <Rocket className="h-4.5 w-4.5" />
             </span>
             <span className="text-[15px] font-bold tracking-tight">
@@ -191,41 +191,48 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* ── Hero ────────────────────────────────────────── */}
+      {/* ── Hero — asymmetric split, anti-centered ───────── */}
       <section className="relative overflow-hidden">
-        <div className="soft-grid pointer-events-none absolute inset-0 opacity-60 [mask-image:radial-gradient(ellipse_at_top,black_30%,transparent_75%)]" aria-hidden />
-        <div className="pointer-events-none absolute -top-32 left-1/2 h-96 w-[48rem] -translate-x-1/2 rounded-full bg-gradient-to-r from-indigo-500/15 via-violet-500/15 to-purple-500/15 blur-3xl" aria-hidden />
-        <div className="relative mx-auto max-w-6xl px-5 pb-24 pt-20 text-center sm:pt-28">
-          <div className="animate-fade-up inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-xs font-semibold text-muted-foreground">
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
-            Your AI-powered study co-pilot
-          </div>
-          <h1 className="animate-fade-up mx-auto mt-6 max-w-3xl text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-6xl" style={{ animationDelay: "0.06s" }}>
-            Plan smarter.
-            <br />
-            Study better.{" "}
-            <span className="text-gradient">Stay ahead.</span>
-          </h1>
-          <p className="animate-fade-up mx-auto mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg" style={{ animationDelay: "0.12s" }}>
-            StudyPilot turns your syllabus, deadlines and available time into a personalized study plan that adapts as you progress.
-          </p>
-          <div className="animate-fade-up mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row" style={{ animationDelay: "0.18s" }}>
-            <Link href="/signup" className={cn(variantClasses.primary, sizeClasses.lg, "inline-flex w-full sm:w-auto")}>
-              Build My Study Plan <ArrowRight className="h-4.5 w-4.5" />
-            </Link>
-            <a href="#how" className={cn(variantClasses.outline, sizeClasses.lg, "inline-flex w-full sm:w-auto")}>
-              See How It Works
-            </a>
+        <div className="soft-grid pointer-events-none absolute inset-0 opacity-50 [mask-image:radial-gradient(ellipse_at_top_left,black_25%,transparent_70%)]" aria-hidden />
+        <div className="pointer-events-none absolute -top-48 -left-40 h-[34rem] w-[34rem] rounded-full bg-primary/10 blur-3xl" aria-hidden />
+        <div className="relative mx-auto grid max-w-6xl items-center gap-14 px-5 pb-20 pt-16 sm:pt-24 lg:grid-cols-[1.05fr_1fr] lg:gap-10">
+          {/* Copy — left, ragged-right, human */}
+          <div className="max-w-xl">
+            <p className="animate-fade-up inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">
+              <Sparkles className="h-3.5 w-3.5" />
+              Your AI-powered study co-pilot
+            </p>
+            <h1 className="animate-fade-up mt-5 text-[2.6rem] font-extrabold leading-[1.04] tracking-tight sm:text-6xl" style={{ animationDelay: "0.05s" }}>
+              Plan smarter.<br />
+              Study better.<br />
+              <span className="text-gradient">Stay ahead.</span>
+            </h1>
+            <p className="animate-fade-up mt-6 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg" style={{ animationDelay: "0.11s" }}>
+              StudyPilot turns your syllabus, deadlines and available time into a personalized study plan that adapts as you progress.
+            </p>
+            <div className="animate-fade-up mt-9 flex flex-col gap-3 sm:flex-row" style={{ animationDelay: "0.17s" }}>
+              <Link href="/signup" className={cn(variantClasses.primary, sizeClasses.lg, "inline-flex justify-center sm:justify-start")}>
+                Build My Study Plan <ArrowRight className="h-4.5 w-4.5" />
+              </Link>
+              <a href="#how" className={cn(variantClasses.outline, sizeClasses.lg, "inline-flex justify-center sm:justify-start")}>
+                See How It Works
+              </a>
+            </div>
+            <p className="animate-fade-up mt-7 flex items-center gap-2 text-xs text-muted-foreground" style={{ animationDelay: "0.22s" }}>
+              <Check className="h-3.5 w-3.5 text-success" />
+              Free forever plan · Works with your real syllabus · No credit card
+            </p>
           </div>
 
-          <div className="animate-fade-up relative mt-16" style={{ animationDelay: "0.26s" }}>
-            <div className="animate-float absolute -left-4 top-8 hidden rounded-2xl border border-border bg-card px-4 py-2.5 pop-shadow md:block">
+          {/* Preview — right, with floating proof chips */}
+          <div className="animate-fade-up relative" style={{ animationDelay: "0.24s" }}>
+            <div className="animate-float absolute -left-6 -top-5 z-10 hidden rounded-2xl border border-border bg-card px-4 py-2.5 pop-shadow md:block">
               <p className="flex items-center gap-1.5 text-xs font-semibold text-success">
                 <Check className="h-3.5 w-3.5" /> Normalization done
               </p>
               <p className="text-[10px] text-muted-foreground">streak +1 🔥</p>
             </div>
-            <div className="animate-float absolute -right-4 top-24 hidden rounded-2xl border border-border bg-card px-4 py-2.5 pop-shadow md:block" style={{ animationDelay: "1.2s" }}>
+            <div className="animate-float absolute -right-5 top-1/3 z-10 hidden rounded-2xl border border-border bg-card px-4 py-2.5 pop-shadow md:block" style={{ animationDelay: "1.4s" }}>
               <p className="flex items-center gap-1.5 text-xs font-semibold text-primary">
                 <Timer className="h-3.5 w-3.5" /> Focus session: 45m
               </p>
@@ -370,7 +377,7 @@ export default function LandingPage() {
 
       {/* ── Final CTA ───────────────────────────────────── */}
       <section className="px-5 pb-24">
-        <div className="relative mx-auto max-w-5xl overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 px-6 py-16 text-center text-white sm:py-20">
+        <div className="relative mx-auto max-w-5xl overflow-hidden rounded-3xl bg-primary px-6 py-16 text-center text-primary-foreground sm:py-20">
           <div className="soft-grid pointer-events-none absolute inset-0 opacity-20" aria-hidden />
           <div className="relative">
             <BookOpen className="mx-auto mb-5 h-10 w-10 opacity-90" />
@@ -382,7 +389,7 @@ export default function LandingPage() {
             </p>
             <Link
               href="/signup"
-              className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-white px-7 py-3.5 text-[15px] font-bold text-indigo-700 shadow-xl transition-transform hover:scale-[1.03]"
+              className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-white px-7 py-3.5 text-[15px] font-bold text-primary shadow-xl transition-transform hover:scale-[1.03]"
             >
               Build My Study Plan <ArrowRight className="h-4.5 w-4.5" />
             </Link>
@@ -394,7 +401,7 @@ export default function LandingPage() {
       <footer className="border-t border-border px-5 py-10">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-5 sm:flex-row">
           <Link href="/" className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-white">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white">
               <Rocket className="h-4 w-4" />
             </span>
             <span className="text-sm font-bold tracking-tight">

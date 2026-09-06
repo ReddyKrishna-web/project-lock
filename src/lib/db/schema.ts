@@ -299,6 +299,8 @@ export const chatConversations = sqliteTable(
     title: text("title").notNull().default("New conversation"),
     createdAt: timestamps.createdAt,
     updatedAt: timestamps.updatedAt,
+    /** When set, this conversation is a wrapped-up (past) session. */
+    endedAt: text("ended_at"),
   },
   (t) => [index("chat_conv_user_idx").on(t.userId)],
 );
@@ -343,6 +345,37 @@ export const flashcards = sqliteTable(
   (t) => [
     index("fc_user_idx").on(t.userId),
     index("fc_due_idx").on(t.userId, t.dueAt),
+  ],
+);
+
+/* ────────────────────────────────────────────────────────────
+   Study materials (uploaded files, extracted text)
+   ──────────────────────────────────────────────────────────── */
+export const materialKinds = ["pdf", "image", "word", "excel", "text"] as const;
+export type MaterialKind = (typeof materialKinds)[number];
+
+export const materials = sqliteTable(
+  "materials",
+  {
+    id: id("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    subjectId: text("subject_id").references(() => subjects.id, { onDelete: "set null" }),
+    topicId: text("topic_id").references(() => topics.id, { onDelete: "set null" }),
+    fileName: text("file_name").notNull(),
+    kind: text("kind", { enum: materialKinds }).notNull(),
+    /** Extracted plain text used for AI grounding (null while processing/failed). */
+    excerpt: text("excerpt"),
+    /** Full extracted text (may be long); excerpt is the truncated view. */
+    fullText: text("full_text"),
+    charCount: integer("char_count").notNull().default(0),
+    status: text("status").notNull().default("ready"), // ready | failed
+    createdAt: timestamps.createdAt,
+  },
+  (t) => [
+    index("materials_user_idx").on(t.userId),
+    index("materials_subject_idx").on(t.subjectId),
   ],
 );
 
@@ -457,6 +490,7 @@ export type StudySession = typeof studySessions.$inferSelect;
 export type ChatConversation = typeof chatConversations.$inferSelect;
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type Flashcard = typeof flashcards.$inferSelect;
+export type Material = typeof materials.$inferSelect;
 export type QuizAttempt = typeof quizAttempts.$inferSelect;
 export type Achievement = typeof achievements.$inferSelect;
 export type UserAchievement = typeof userAchievements.$inferSelect;

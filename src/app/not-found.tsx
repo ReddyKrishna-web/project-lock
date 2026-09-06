@@ -4,7 +4,7 @@ import { Compass } from "lucide-react";
 export default function NotFound() {
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center px-4 py-16 text-center">
-      <span className="mb-6 flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 text-white pop-shadow">
+      <span className="mb-6 flex h-16 w-16 items-center justify-center rounded-3xl bg-primary text-white pop-shadow">
         <Compass className="h-8 w-8" aria-hidden />
       </span>
       <h1 className="text-2xl font-bold tracking-tight">Off the flight path</h1>

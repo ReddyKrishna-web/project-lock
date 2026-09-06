@@ -20,15 +20,22 @@ type Intent =
   | "deadlines"
   | "quiz"
   | "flashcards"
+  | "mindmap"
   | "explain"
   | "stats"
   | "freeform";
 
+/*
+ * Order matters. Specific data-intents MUST be tested before "explain",
+ * whose regex (what is/what are/how does) would otherwise swallow queries
+ * like "what are my weak topics" and route them to the generic tutor.
+ * "explain" is deliberately near-last as the tutoring catch-all.
+ */
 const TESTS: [Intent, RegExp][] = [
   ["reschedule", /(reschedul|redistribut|missed .*(today|yesterday|week)|i (missed|skipped)|fell behind|what happens if i miss)/i],
+  ["mindmap", /\b(mind ?map|concept map|topic tree|visuali[sz]e.*topic)\b/i],
   ["quiz", /\b(quiz|test me|practice question|pop quiz|question me|ask me)\b/i],
   ["flashcards", /\b(flashcard|study cards|review cards|make cards)\b/i],
-  ["explain", /\b(explain|teach me|what is|what are|how does|how do|understand|tutor|help me (with|understand))\b/i],
   ["deadlines", /\b(deadline|due (soon|today|tomorrow)|upcoming (task|assignment)|assignments?)\b/i],
   ["weak_topics", /\b(weak(est)?|struggl|behind in|trouble with|hardest topic)\b/i],
   ["on_track", /\b(on track|ahead|behind schedule|how am i doing|my progress|keep up)\b/i],
@@ -36,6 +43,7 @@ const TESTS: [Intent, RegExp][] = [
   ["stats", /\b(streak|stats|statistics|how much (did|have) i|hours (this|last) week|weekly)\b/i],
   ["plan_today", /\b(plan (my )?(day|today)|make (me )?a plan|build (me )?a plan|today'?s plan|schedule (my )?day|generate.*plan|plan for today)\b/i],
   ["study_next", /\b(what should i study|what do i study|what'?s next|study (next|now)|where should i (start|begin)|what do i do (next|now)|what now)\b/i],
+  ["explain", /\b(explain|teach me|what is|what are|how does|how do|understand|tutor|help me (with|understand)|summari[sz]e)\b/i],
 ];
 
 function detectIntent(message: string): Intent {
@@ -51,7 +59,11 @@ const fmt = (m: number) => formatMinutes(m);
 const shortDay = (iso: string) =>
   new Date(`${iso}T00:00:00`).toLocaleDateString("en-US", { weekday: "short" });
 
-export async function respond(ctx: ChatContext, message: string): Promise<AiReply> {
+export async function respond(
+  ctx: ChatContext,
+  message: string,
+  history: { role: "user" | "assistant"; content: string }[] = [],
+): Promise<AiReply> {
   const intent = detectIntent(message);
 
   switch (intent) {
@@ -72,7 +84,7 @@ export async function respond(ctx: ChatContext, message: string): Promise<AiRepl
     case "stats":
       return localStats(ctx);
     default:
-      return freeformOrTutor(ctx, message, intent);
+      return freeformOrTutor(ctx, message, intent, history);
   }
 }
 
@@ -260,45 +272,130 @@ function localStats(ctx: ChatContext): AiReply {
   };
 }
 
-/* ── LLM path (tutor / quiz / flashcards / freeform) ─────────── */
+/* ── LLM path (tutor / quiz / flashcards / mindmap / freeform) ─ */
 
-async function freeformOrTutor(ctx: ChatContext, message: string, intent: Intent): Promise<AiReply> {
+/** True when the message routes to the LLM path (stream-eligible). */
+export function isLlmIntent(message: string): boolean {
+  const intent = detectIntent(message);
+  return (
+    intent === "explain" ||
+    intent === "freeform" ||
+    intent === "quiz" ||
+    intent === "flashcards" ||
+    intent === "mindmap"
+  );
+}
+
+/** Shared prompt builder for the LLM intents — used by both the validated
+ * JSON path (askForJson) and the streaming chat route, so wording never
+ * drifts between the two transports. `mode` selects the output contract. */
+export async function llmChatParams(
+  ctx: ChatContext,
+  message: string,
+  intent: Intent,
+  history: { role: "user" | "assistant"; content: string }[],
+  mode: "json" | "text" = "json",
+): Promise<{ system: string; user: string; temperature: number; maxTokens: number }> {
+  const snapshot = buildSnapshot(ctx);
+  const materials = buildMaterials(ctx);
+  const isTutor = intent === "explain";
+  const role =
+    intent === "quiz"
+      ? "You are an expert tutor creating a SHORT quiz. Ask 3 focused questions drawn FIRST from the uploaded study materials (if relevant), else the syllabus, then wait for answers. Keep it to the subject they asked about."
+      : intent === "flashcards"
+        ? "You are a StudyPilot study coach. Create 5 crisp flashcards from the uploaded study materials (if relevant) or the syllabus around what they asked. Output EXACTLY this layout for every card, with no preamble or trailing notes:\n**Front**: <question>\n**Back**: <answer>\n\nExample card:\n**Front**: What is the primary key?\n**Back**: The column(s) that uniquely identify each row."
+        : intent === "mindmap"
+          ? "You are a StudyPilot study coach. Produce a text mind map of the requested topic as an indented tree using bullet markers and arrows. Root = the topic; 2 levels of branches; each node ≤ 6 words. Ground it in the uploaded materials or the student's syllabus."
+          : isTutor
+            ? "You are Pilot, a patient university tutor inside StudyPilot. Explain the requested concept clearly using the uploaded materials where relevant, else the student's own subjects. Structure: simple explanation → concrete example → key points → common mistakes → one quick check question."
+            : "You are Pilot, the StudyPilot AI study co-pilot — a capable general assistant, like a friendly ChatGPT that also knows the student's academic life. Answer ANY question the student asks: general knowledge, explanations, advice, small talk, or app-related help. You are NOT limited to the snapshot; the snapshot is context, not a cage.\n- If the question is about the student's own data, ground it in the snapshot.\n- If it needs world knowledge, answer from your own knowledge, and when clearly helpful, say what to double-check.\n- If you genuinely don't know something or lack up-to-date facts, say so honestly and suggest where to verify — never fabricate.\n- Keep continuity with the conversation history above.\n- Be warm, concise, practical. Recommend concrete in-app next actions when they fit.";
+
+  const system = [
+    "You are StudyPilot AI (called Pilot), an encouraging but no-nonsense academic assistant inside a study app — and a capable general assistant beyond it.",
+    "Never invent facts about the student — ground student-data claims in the snapshot JSON below.",
+    "Keep replies under ~200 words unless the student asks for depth.",
+    "Use plain markdown: **bold** for emphasis, short bullet lists.",
+    mode === "json"
+      ? "Your JSON output MUST include a non-empty \"reply\" field containing the response text."
+      : "Write your answer directly as plain markdown text — no JSON, no wrapper.",
+    UNTRUSTED_DIRECTIVE,
+    role,
+    materials,
+    `Student snapshot:\n${snapshot}`,
+  ].join("\n\n");
+
+  // Render recent conversation as transcript turns so the model can follow
+  // up on what was already said (ChatGPT-style continuity).
+  const turns: string[] = [];
+  for (const h of history.slice(-10)) {
+    turns.push(`${h.role === "user" ? "Student" : "Pilot"}: ${h.content.slice(0, 700)}`);
+  }
+  const convo = turns.length
+    ? `Conversation so far:\n${turns.join("\n")}\n\n`
+    : "";
+
+  return { system, user: `${convo}${wrapUntrusted(message)}`, temperature: 0.5, maxTokens: 900 };
+}
+
+async function freeformOrTutor(
+  ctx: ChatContext,
+  message: string,
+  intent: Intent,
+  history: { role: "user" | "assistant"; content: string }[],
+): Promise<AiReply> {
   const provider = getAiProvider();
   if (!provider.available()) {
     return localUnavailable(ctx, message, intent);
   }
 
-  const snapshot = buildSnapshot(ctx);
-  const isTutor = intent === "explain";
-  const role =
-    intent === "quiz"
-      ? "You are an expert tutor creating a SHORT quiz. Ask 3 focused questions from the student's own syllabus, then wait for answers. Keep it to the subject they asked about."
-      : intent === "flashcards"
-        ? "You are a StudyPilot study coach. Create 5 crisp flashcards from the student's syllabus around what they asked. Output EXACTLY this layout for every card, with no preamble or trailing notes:\n**Front**: <question>\n**Back**: <answer>\n\nExample card:\n**Front**: What is the primary key?\n**Back**: The column(s) that uniquely identify each row."
-        : isTutor
-          ? "You are Pilot, a patient university tutor inside StudyPilot. Explain the requested concept clearly using the student's own subjects where relevant. Structure: simple explanation → concrete example → key points → common mistakes → one quick check question."
-          : "You are Pilot, the StudyPilot AI study co-pilot. You answer in the student's context using the snapshot below. Be warm, concise, practical. Recommend concrete next actions the student can take in the app.";
-
-  const system = [
-    "You are StudyPilot AI (called Pilot), an encouraging but no-nonsense academic assistant inside a study app.",
-    "Never invent facts about the student — ground every answer in the snapshot JSON below.",
-    "Keep replies under ~180 words unless the student asks for depth.",
-    "Use plain markdown: **bold** for emphasis, short bullet lists.",
-    "Your JSON output MUST include a non-empty \"reply\" field containing the response text.",
-    UNTRUSTED_DIRECTIVE,
-    role,
-    `Student snapshot:\n${snapshot}`,
-  ].join("\n\n");
+  const { system, user: userPayload } = await llmChatParams(ctx, message, intent, history);
 
   // The full schema is always enforced: reply is required (actions/suggested
   // are already optional). A partial schema would let a model reply slip
   // through without any actual content.
-  const reply = (await askForJson(provider, system, wrapUntrusted(message), AiReplySchema)) as AiReply;
+  try {
+    const reply = (await askForJson(provider, system, userPayload, AiReplySchema)) as AiReply;
+    return { reply: reply.reply, actions: reply.actions, suggested: reply.suggested };
+  } catch (firstErr) {
+    // One retry with a stricter instruction — transient provider/format
+    // hiccups (429s, malformed JSON) shouldn't kill the conversation.
+    try {
+      const retry = (await askForJson(
+        provider,
+        `${system}\n\nIMPORTANT: Respond ONLY with valid JSON: {"reply": "..."}. Keep the reply short (under 120 words).`,
+        userPayload,
+        AiReplySchema,
+      )) as AiReply;
+      return { reply: retry.reply, actions: retry.actions, suggested: retry.suggested };
+    } catch {
+      void firstErr;
+      // Both attempts failed — degrade to a grounded deterministic answer
+      // instead of throwing. Pilot must never crash a conversation.
+      return localFallback(ctx, message, intent);
+    }
+  }
+}
+
+/** Last-resort deterministic answer when the provider is unreachable. */
+function localFallback(ctx: ChatContext, message: string, intent: string): AiReply {
+  const next = ctx.todayRemainingBlocks[0];
+  const isTutorish = intent === "explain" || intent === "freeform";
   return {
-    reply: reply.reply,
-    actions: reply.actions,
-    suggested: reply.suggested,
+    reply: isTutorish
+      ? `I couldn't reach the AI service just now${/^(hi|hey|hello)\b/i.test(message) ? ` — but hi! 👋` : "."} Your plan is still fully working, and I can answer from your own data right away:\n\n${next ? `• Next up: **${next.subject} — ${next.topic}** at ${next.at}` : "• Nothing pending in today's plan"}\n• Streak: **${ctx.streak} day${ctx.streak === 1 ? "" : "s"}** · This week: **${fmt(ctx.thisWeekMinutes)}**\n\nTry me again in a moment — or ask me to plan your day, list weak topics, or check your exams.`
+      : `I couldn't reach the AI service for that one just now. Your study data is still fully available though — want me to plan your day, show weak topics, or check exam readiness?`,
+    suggested: ["Plan my day", "What are my weak topics?", "Am I on track?"],
   };
+}
+
+/** Study-material excerpts attached to the model context, if any exist. */
+function buildMaterials(ctx: ChatContext): string {
+  if (!ctx.materials.length) return "";
+  const chunks = ctx.materials
+    .slice(0, 8)
+    .map((m) => `[${m.subjectName}${m.topicName ? ` · ${m.topicName}` : ""} · ${m.fileName}]\n${m.excerpt}`)
+    .join("\n\n---\n\n");
+  return `\nUploaded study materials (most relevant excerpts — prefer these over your own knowledge when answering syllabus questions):\n${chunks}`;
 }
 
 /** Honest, still-useful answer when no LLM key is configured. */

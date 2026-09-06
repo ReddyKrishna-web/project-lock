@@ -213,7 +213,7 @@ SUGGESTION ID: PL-008
 TITLE: Stream AI chat responses token-by-token
 CATEGORY: UX / AI
 PRIORITY: P3 — Medium
-CURRENT STATUS: PENDING
+CURRENT STATUS: COMPLETED (2026-09-06)
 CURRENT IMPLEMENTATION STATE: NOT IMPLEMENTED — chat returns one
   complete reply per server action (verified: no streaming route exists).
 PROBLEM: Tutor replies (500–1300 chars) appear all at once after several
@@ -231,9 +231,16 @@ RISK: Medium — touches the chat transport; must preserve persistence
 SCOPE: new src/app/api/chat/route.ts + chat-view adjustments.
 VERIFICATION METHOD: Browser E2E asserting progressive text growth.
 UPGRADE OPPORTUNITY: —
-IMPLEMENTATION NOTES: Explicitly requested by the user; deferred until
-  after the security items to avoid stacking transport changes on an
-  unhardened endpoint.
+IMPLEMENTATION NOTES: Completed. Transport: POST /api/chat (SSE).
+  Shared prompt builder (llmChatParams) keeps JSON path and stream path
+  wording-identical, with a mode switch (json/text). Provider gained an
+  optional stream() with onDelta callback (OpenAI-compatible SSE; Groq
+  verified live). Client reads the stream and renders incrementally;
+  "done" is authoritative (carries validated + persisted meta). Safety
+  chain preserved: auth -> rate limit -> sanitize -> validated persist,
+  and stream failure degrades to the deterministic fallback so the
+  conversation never dies. Verified live: 349 delta frames, first token
+  7ms; full gate suite green; smoke 14/14.
 ---------------------
 
 SUGGESTION ID: PL-009
@@ -566,7 +573,7 @@ IMPLEMENTATION NOTES: —
 BACKLOG SUMMARY (2026-09-06, after loop iteration 4 — CI green)
   COMPLETED:                PL-001, PL-002, PL-003, PL-004, PL-005,
                             PL-006, PL-007, PL-010, PL-011, PL-013
-  PENDING:                  PL-008, PL-009 (blocked: needs connection
+  PENDING:                  PL-009 (blocked: needs connection string)
                             string), PL-012, PL-014 … PL-022
   NEXT UP (per priority):   PL-008 (P3) → PL-012 (P3)
   BLOCKED / EXTERNAL INPUT: PL-009 (Postgres URL), PL-014 (channel +

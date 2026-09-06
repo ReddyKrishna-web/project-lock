@@ -1,9 +1,9 @@
 import { cn } from "@/lib/utils";
 
 const GRADIENTS = [
-  "from-indigo-500 to-violet-500",
-  "from-sky-500 to-indigo-500",
-  "from-violet-500 to-fuchsia-500",
+  "from-[#0b57d0] to-[#083aa0]",
+  "from-[#2f6fd6] to-[#0b57d0]",
+  "from-[#083aa0] to-[#2f4fa0]",
   "from-emerald-500 to-teal-500",
   "from-amber-500 to-orange-500",
   "from-rose-500 to-pink-500",

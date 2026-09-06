@@ -11,6 +11,14 @@ export interface AIProvider {
   available(): boolean;
   /** Low-level completion used by tutor/quiz/flashcard features. */
   complete(system: string, user: string, opts?: { temperature?: number; maxTokens?: number }): Promise<string>;
+  /**
+   * Optional token-streaming completion. When `onDelta` is supplied it is
+   * called with each incremental text chunk as it arrives; the resolved
+   * string is always the complete reply. Providers without streaming omit
+   * this and callers fall back to complete(). Never throws for "empty
+   * stream" — resolve with what arrived.
+   */
+  stream?(system: string, user: string, opts?: { temperature?: number; maxTokens?: number }, onDelta?: (chunk: string) => void): Promise<string>;
 }
 
 /** Validated structured reply — the single contract for AI chat output. */
@@ -77,6 +85,8 @@ export type ChatContext = {
   weakTopics: ChatTopicInfo[];
   notStartedNearExam: ChatTopicInfo[];
   syllabusTopics: ChatTopicInfo[];
+  /** Excerpts from the student's uploaded study materials (if any). */
+  materials: { fileName: string; subjectName: string; topicName: string | null; excerpt: string }[];
   exams: { id: string; name: string; subject: string | null; date: string; daysLeft: number; syllabusPercent: number; readiness: number }[];
   upcomingDeadlines: { title: string; kind: string; daysLeft: number; subject: string | null }[];
   missedThisWeek: number;

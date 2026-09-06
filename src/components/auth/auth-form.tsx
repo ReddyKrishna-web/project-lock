@@ -45,7 +45,7 @@ export function AuthForm({ mode, googleConfigured = false }: { mode: "login" | "
     <Card className="w-full max-w-md">
       <CardBody className="pt-8">
         <div className="mb-7 flex flex-col items-center text-center">
-          <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 text-white pop-shadow">
+          <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-white pop-shadow">
             <Rocket className="h-7 w-7" />
           </span>
           <h1 className="text-xl font-bold tracking-tight">

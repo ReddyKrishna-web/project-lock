@@ -1,32 +1,135 @@
-import { and, asc, count, desc, eq, gte, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, isNull, sql } from "drizzle-orm";
 import { db, uid } from "@/lib/db";
 import {
   chatConversations,
   chatMessages,
   exams,
+  materials as materialsTable,
   planItems,
   studySessions,
+  subjects as subjectsTable,
   tasks,
-  topics,
+  topics as topicsTable,
 } from "@/lib/db/schema";
 import { daysUntil, minutesToClock } from "@/lib/dates";
 import type { ChatContext, ChatTopicInfo } from "@/lib/ai/types";
 import { getAppData, getProfileBundle } from "./data";
 
-export async function getOrCreateConversation(userId: string): Promise<string> {
-  const existing = await db
-    .select({ id: chatConversations.id })
+/* ── Chat sessions ───────────────────────────────────────────
+   Each login starts a FRESH session. The previous session is kept and
+   listed as history ("wrap-up"), so nothing the student discussed is
+   lost — but the active chat always starts clean.
+   ──────────────────────────────────────────────────────────── */
+
+/** The user's open session, if one exists and has messages. */
+async function openSession(userId: string) {
+  const rows = await db
+    .select()
     .from(chatConversations)
-    .where(eq(chatConversations.userId, userId))
+    .where(and(eq(chatConversations.userId, userId), isNull(chatConversations.endedAt)))
     .orderBy(desc(chatConversations.createdAt))
     .limit(1)
     .all();
-  if (existing.length) return existing[0].id;
+  return rows[0] ?? null;
+}
+
+/**
+ * Session semantics: on login the previous open session is closed
+ * ("wrapped up") and a fresh one starts, so the student always lands
+ * in a clean chat. Old sessions remain accessible in the sidebar.
+ */
+export async function getOrCreateSession(userId: string): Promise<string> {
+  const open = await openSession(userId);
+  if (open) return open.id;
+
+  // Wrap up any dangling sessions from an earlier run (e.g. browser closed).
+  await db
+    .update(chatConversations)
+    .set({ endedAt: new Date().toISOString() })
+    .where(and(eq(chatConversations.userId, userId), isNull(chatConversations.endedAt)))
+    .run();
 
   const id = uid();
   const now = new Date().toISOString();
-  await db.insert(chatConversations).values({ id, userId, title: "StudyPilot", createdAt: now, updatedAt: now });
+  await db.insert(chatConversations).values({
+    id,
+    userId,
+    title: "New session",
+    createdAt: now,
+    updatedAt: now,
+  });
   return id;
+}
+
+/** Back-compat shim used by the send action. */
+export async function getOrCreateConversation(userId: string): Promise<string> {
+  return getOrCreateSession(userId);
+}
+
+/** All sessions, newest first, with a preview of the first user message. */
+export async function listSessions(userId: string) {
+  const rows = await db
+    .select({
+      id: chatConversations.id,
+      title: chatConversations.title,
+      createdAt: chatConversations.createdAt,
+      updatedAt: chatConversations.updatedAt,
+      endedAt: chatConversations.endedAt,
+    })
+    .from(chatConversations)
+    .where(eq(chatConversations.userId, userId))
+    .orderBy(desc(chatConversations.updatedAt))
+    .limit(30)
+    .all();
+
+  const withPreviews = await Promise.all(
+    rows.map(async (s) => {
+      const first = await db
+        .select({ content: chatMessages.content })
+        .from(chatMessages)
+        .where(and(eq(chatMessages.conversationId, s.id), eq(chatMessages.role, "user")))
+        .orderBy(chatMessages.createdAt)
+        .limit(1)
+        .all();
+      const [{ c: msgCount }] = await db
+        .select({ c: count() })
+        .from(chatMessages)
+        .where(eq(chatMessages.conversationId, s.id))
+        .all();
+      return {
+        ...s,
+        preview: first[0]?.content.slice(0, 80) ?? "Empty session",
+        messageCount: msgCount ?? 0,
+      };
+    }),
+  );
+  return withPreviews;
+}
+
+/** Auto-title a session from its first user message. */
+export async function maybeTitleSession(conversationId: string, firstUserMessage: string) {
+  const rows = await db
+    .select({ title: chatConversations.title })
+    .from(chatConversations)
+    .where(eq(chatConversations.id, conversationId))
+    .limit(1)
+    .all();
+  if (rows[0]?.title && rows[0].title !== "New session") return;
+  const title = firstUserMessage.replace(/\s+/g, " ").trim().slice(0, 48) || "Study session";
+  await db
+    .update(chatConversations)
+    .set({ title, updatedAt: new Date().toISOString() })
+    .where(eq(chatConversations.id, conversationId))
+    .run();
+}
+
+/** Explicitly close the current session (used on logout). */
+export async function closeActiveSession(userId: string) {
+  await db
+    .update(chatConversations)
+    .set({ endedAt: new Date().toISOString() })
+    .where(and(eq(chatConversations.userId, userId), isNull(chatConversations.endedAt)))
+    .run();
 }
 
 export async function recentMessages(conversationId: string, limit = 40) {
@@ -150,7 +253,29 @@ export async function buildChatContext(userId: string): Promise<ChatContext> {
 
   void exams;
   void tasks;
-  void topics;
+
+  // Uploaded study materials — the model prefers these over its own
+  // knowledge when they cover the question (grounded answers).
+  const materialRows = await db
+    .select({
+      fileName: materialsTable.fileName,
+      subjectName: subjectsTable.name,
+      topicName: topicsTable.name,
+      excerpt: materialsTable.excerpt,
+    })
+    .from(materialsTable)
+    .leftJoin(subjectsTable, eq(materialsTable.subjectId, subjectsTable.id))
+    .leftJoin(topicsTable, eq(materialsTable.topicId, topicsTable.id))
+    .where(eq(materialsTable.userId, userId))
+    .orderBy(desc(materialsTable.createdAt))
+    .limit(30)
+    .all();
+  const materialCtx = materialRows.map((m) => ({
+    fileName: m.fileName,
+    subjectName: m.subjectName ?? "General",
+    topicName: m.topicName ?? null,
+    excerpt: (m.excerpt ?? "").slice(0, 900),
+  }));
 
   return {
     user: { name: data.user.name },
@@ -170,6 +295,7 @@ export async function buildChatContext(userId: string): Promise<ChatContext> {
     weakTopics,
     notStartedNearExam,
     syllabusTopics: syllabusTopics.slice(0, 200),
+    materials: materialCtx,
     exams: examsAgg,
     upcomingDeadlines,
     missedThisWeek: missedCount ?? 0,

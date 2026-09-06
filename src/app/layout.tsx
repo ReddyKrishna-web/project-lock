@@ -1,11 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Outfit, Inter_Tight } from "next/font/google";
 import { ToastProvider } from "@/components/ui/toaster";
 import "./globals.css";
 
-const inter = Inter({
+const outfit = Outfit({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-outfit",
+  display: "swap",
+});
+
+const interTight = Inter_Tight({
+  subsets: ["latin"],
+  variable: "--font-inter-tight",
   display: "swap",
 });
 
@@ -56,11 +62,11 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={`${outfit.variable} ${interTight.variable}`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${outfit.variable} ${interTight.variable} font-sans antialiased`}>
         <ToastProvider>{children}</ToastProvider>
       </body>
     </html>

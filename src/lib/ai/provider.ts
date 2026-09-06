@@ -13,6 +13,71 @@ export class OpenAICompatibleProvider implements AIProvider {
     return Boolean(process.env.AI_API_KEY);
   }
 
+  /** Parse an OpenAI-style SSE line into its data payload (null if none). */
+  private sseData(line: string): string | null {
+    if (!line.startsWith("data:")) return null;
+    const payload = line.slice(5).trim();
+    return payload && payload !== "[DONE]" ? payload : null;
+  }
+
+  /** True token streaming for OpenAI-dialect providers (Groq included).
+   *  Each parsed delta is handed to onDelta (if given) and accumulated. */
+  async stream(system: string, user: string, opts?: { temperature?: number; maxTokens?: number }, onDelta?: (chunk: string) => void): Promise<string> {
+    const apiKey = process.env.AI_API_KEY;
+    const baseUrl = (process.env.AI_BASE_URL || "https://api.openai.com/v1").replace(/\/$/, "");
+    const model = process.env.AI_MODEL || "gpt-4o-mini";
+    if (!apiKey) throw new Error("AI_API_KEY is not configured");
+
+    const res = await fetch(`${baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        stream: true,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+        temperature: opts?.temperature ?? 0.5,
+        max_tokens: opts?.maxTokens ?? 900,
+      }),
+    });
+    if (!res.ok || !res.body) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`AI provider error ${res.status}: ${body.slice(0, 300)}`);
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let full = "";
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? ""; // keep the partial trailing line
+      for (const line of lines) {
+        const payload = this.sseData(line);
+        if (payload == null) continue;
+        try {
+          const json = JSON.parse(payload) as { choices?: { delta?: { content?: string } }[] };
+          const delta = json.choices?.[0]?.delta?.content;
+          if (delta) {
+            full += delta;
+            onDelta?.(delta);
+          }
+        } catch {
+          // A malformed keepalive/frame is skipped, not fatal.
+        }
+      }
+    }
+    return full;
+  }
+
   async complete(system: string, user: string, opts?: { temperature?: number; maxTokens?: number }): Promise<string> {
     const apiKey = process.env.AI_API_KEY;
     const baseUrl = (process.env.AI_BASE_URL || "https://api.openai.com/v1").replace(/\/$/, "");

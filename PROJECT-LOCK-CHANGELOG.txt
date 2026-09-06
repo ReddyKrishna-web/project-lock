@@ -459,3 +459,62 @@ NEW SUGGESTIONS CREATED: none.
 FINAL STATUS: PL-010 flipped to COMPLETED. Repo:
   https://github.com/ReddyKrishna-web/project-lock
 =====================================================================
+=====================================================================
+ENTRY #14 — PL-008: Streaming AI chat (token-by-token)
+=====================================================================
+DATE: 2026-09-06
+SUGGESTION ID: PL-008
+TITLE: Stream AI chat responses token-by-token
+
+WHAT WAS FOUND: Chat awaited the complete validated JSON reply before
+  rendering anything (one server action, no streaming route). Provider
+  abstraction had no streaming capability.
+
+WHAT WAS CHANGED:
+  - src/lib/ai/types.ts: AIProvider gained optional stream(system, user,
+    opts, onDelta) — providers without it fall back to complete().
+  - src/lib/ai/provider.ts: OpenAICompatibleProvider.stream() parses
+    OpenAI-dialect SSE (Groq-compatible), emits onDelta per token,
+    accumulates the full text, skips malformed keepalive frames.
+  - src/lib/ai/router.ts: prompt construction extracted into exported
+    llmChatParams(ctx, message, intent, history, mode: "json" | "text")
+    shared by both transports (JSON-mode line only in json mode); added
+    exported isLlmIntent()/detectIntent reuse. freeformOrTutor now calls
+    the shared builder — zero prompt drift between paths.
+  - src/app/api/chat/route.ts (NEW): SSE route. Chain identical to the
+    action: currentUser auth -> 2000-char zod validation -> per-user rate
+    limit -> sanitizeUserText -> persist user msg -> stream. Deterministic
+    intents stream one chunk then done{}; LLM intents stream deltas then
+    done{} (authoritative, carries validated meta actually persisted);
+    any failure emits error{} and closes cleanly; empty stream falls back
+    to the deterministic responder so the conversation never dies.
+  - src/components/app/chat-view.tsx: send() uses fetch + ReadableStream
+    reader, appends delta frames into state (thinking indicator swaps to
+    growing bubble on first delta), done record is authoritative (final
+    content + actions/suggested + session list update). 401/429/400
+    handled with honest toasts. Server action removed from client.
+
+FILES/MODULES AFFECTED: src/lib/ai/types.ts, src/lib/ai/provider.ts,
+  src/lib/ai/router.ts, src/app/api/chat/route.ts (new),
+  src/components/app/chat-view.tsx
+
+WHY THE CHANGE WAS MADE: Perceived latency for tutor/freeform replies
+  dominated by model generation time; streaming shows text as it is
+  produced. Explicitly requested by the user (PL-008).
+
+TESTS PERFORMED: tsc --noEmit clean; eslint 0 problems; 37/37 vitest;
+  next build OK; smoke 14/14; LIVE E2E against production server with
+  real Groq key: deterministic intent -> delta+done framing; LLM intent
+  -> 349 delta frames, first token 7ms, last 698ms, reply grounded in
+  the student's real weak topics; no error events.
+
+VERIFICATION RESULT: STREAM E2E: PASS (script asserted >=3 deltas and
+  a non-empty done reply; observed 349).
+
+REGRESSION CHECK: Server-action path kept as fallback (action still
+  exported for any non-UI callers); full gate suite re-run green after
+  all edits; smoke confirms all app pages still render.
+
+NEW ISSUES DISCOVERED: none open.
+NEW SUGGESTIONS CREATED: none.
+FINAL STATUS: PL-008 COMPLETED.

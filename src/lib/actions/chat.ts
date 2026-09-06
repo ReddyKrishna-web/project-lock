@@ -8,7 +8,9 @@ import { sanitizeUserText } from "@/lib/security/guard";
 import {
   buildChatContext,
   getOrCreateConversation,
+  maybeTitleSession,
   persistMessage,
+  recentMessages,
 } from "@/lib/services/chat";
 
 /** Per-user chat budget: generous for real study use, bounded for cost. */
@@ -34,10 +36,16 @@ export async function sendChatMessageAction(message: string) {
 
   const conversationId = await getOrCreateConversation(user.id);
   await persistMessage(conversationId, "user", clean);
+  await maybeTitleSession(conversationId, clean);
 
   try {
     const ctx = await buildChatContext(user.id);
-    const reply = await respond(ctx, clean);
+    // Recent turns give the model continuity (ChatGPT-style follow-ups).
+    const history = (await recentMessages(conversationId, 11))
+      .filter((m) => m.role === "user" || m.role === "assistant")
+      .slice(0, -1) // drop the just-persisted user message
+      .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
+    const reply = await respond(ctx, clean, history);
     await persistMessage(conversationId, "assistant", reply.reply, {
       actions: reply.actions ?? [],
       suggested: reply.suggested ?? [],
@@ -45,6 +53,7 @@ export async function sendChatMessageAction(message: string) {
 
     return {
       ok: true as const,
+      conversationId,
       message: {
         id: conversationId,
         content: reply.reply,
