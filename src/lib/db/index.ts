@@ -28,6 +28,10 @@ export function getDb(): DB {
     const sqlite = new Database(resolveDbFile());
     sqlite.pragma("journal_mode = WAL");
     sqlite.pragma("foreign_keys = ON");
+    // Multi-process access (Next build workers, CI): competing writers wait
+    // instead of failing with "database is locked" (first build on an empty
+    // DB races migration + demo seeding across workers).
+    sqlite.pragma("busy_timeout = 10000");
     globalForDb.__spDb = drizzle(sqlite, { schema });
   }
   if (!globalForDb.__spMigrated) {
