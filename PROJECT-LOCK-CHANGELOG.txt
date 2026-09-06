@@ -1,0 +1,414 @@
+=====================================================================
+ PROJECT-LOCK — DEVELOPMENT CHANGELOG
+ (PROJECT-LOCK-CHANGELOG.txt)
+=====================================================================
+ Historical record of every completed improvement.
+ Entries below #1 were completed before the controlled-improvement
+ process was adopted; they are imported here for a complete history
+ and were re-verified against the source during the 2026-09-06 audit.
+=====================================================================
+
+DATE: 2026-08-30 → 2026-09-04 (initial build, pre-process)
+SUGGESTION ID: n/a (foundation phases 1–10)
+TITLE: StudyPilot full MVP build
+
+WHAT WAS FOUND: No project existed.
+WHAT WAS CHANGED: Complete product build — Next.js + TypeScript +
+  Tailwind + shadcn-style UI system, SQLite/Drizzle data layer with
+  normalized schema + demo seed, scrypt auth + sessions, deterministic
+  planning engine (scoring, scheduling, adaptive redistribution, exam
+  roadmaps, readiness, stats, insights), AI provider abstraction with
+  offline engine fallback, all 17 screens, light/dark/system theming,
+  responsive shell, QA tooling (smoke, visual-qa, flow-qa, ai-qa).
+FILES/MODULES AFFECTED: entire repository (~90 source files).
+WHY THE CHANGE WAS MADE: product mandate.
+TESTS PERFORMED: tsc clean, 19/19 vitest (engine + stats), production
+  build, 14/14 smoke with real session.
+VERIFICATION RESULT: all green (re-verified 2026-09-06).
+REGRESSION CHECK: n/a (initial build).
+NEW ISSUES DISCOVERED: mobile grid min-content blowout (fixed same
+  week, see #1).
+NEW SUGGESTIONS CREATED: many — see backlog PL-006…PL-022.
+FINAL STATUS: COMPLETED
+=====================================================================
+
+DATE: 2026-09-04
+SUGGESTION ID: n/a (imported; backlog equivalent PL-016 phase 1 scope)
+TITLE: Mobile dashboard 111px horizontal overflow (grid blowout)
+
+WHAT WAS FOUND: On a 390px viewport the dashboard hero cards rendered
+  484px wide — classic grid min-content blowout from nowrap truncating
+  rows in an implicit auto column.
+WHAT WAS CHANGED: Base-layer CSS rule giving bare `.grid` elements one
+  shrinkable minmax(0, 1fr) column; explicit grid-cols-* utilities
+  (e.g. calendar grid-cols-7) still override.
+FILES/MODULES AFFECTED: src/app/globals.css.
+WHY THE CHANGE WAS MADE: mobile-first product mandate.
+TESTS PERFORMED: DOM probe of track widths; flow-qa mobile pass.
+VERIFICATION RESULT: 0px horizontal overflow on dashboard + today.
+REGRESSION CHECK: calendar month grid unaffected.
+NEW ISSUES DISCOVERED: none.
+NEW SUGGESTIONS CREATED: —
+FINAL STATUS: COMPLETED
+=====================================================================
+
+DATE: 2026-09-04
+SUGGESTION ID: n/a (imported; now tracked as PL-016)
+TITLE: Month calendar view + drag-and-drop rescheduling
+
+WHAT WAS FOUND: Calendar was week-only; no manual rescheduling existed.
+WHAT WAS CHANGED: Client week+month calendar with native HTML5 DnD;
+  server movePlanItem with past-guard, topic-dedup, day-capacity rules;
+  loadCalendarData (plan −45d…future, tasks, exams); data-* test hooks.
+FILES/MODULES AFFECTED: src/components/app/calendar-view.tsx,
+  src/lib/services/plan.ts, src/lib/actions/planning.ts,
+  src/lib/services/data.ts, calendar page.
+WHY THE CHANGE WAS MADE: user-requested feature phase.
+TESTS PERFORMED: move semantics vs real DB (past refused, capacity
+  refused 2.7h/2.8h, future move OK, completed refused, state restored);
+  build + smoke 14/14; headless visual QA light+dark, zero console
+  errors.
+VERIFICATION RESULT: green. Browser-level drag gesture itself NOT
+  VERIFIED by automation (headless Chrome limitation) — service and
+  action fully tested; UI gesture confirmed by user.
+REGRESSION CHECK: full smoke green.
+NEW ISSUES DISCOVERED: touch/keyboard drag absent → PL-016.
+NEW SUGGESTIONS CREATED: PL-016.
+FINAL STATUS: COMPLETED
+=====================================================================
+
+DATE: 2026-09-05
+SUGGESTION ID: n/a (imported; now tracked as PL-005)
+TITLE: Real AI provider wiring + tutor/quiz/flashcards E2E
+
+WHAT WAS FOUND: AI layer provider-ready but never exercised against a
+  real model; OpenAI key had no credits (429).
+WHAT WAS CHANGED: .env → Groq free tier via OpenAI-compatible adapter
+  (model qwen); E2E script scripts/ai-qa.mjs driving the real chat UI.
+  Two real bugs found and fixed: (a) AiReplySchema.partial() let a
+  model reply without "reply" pass validation into a NOT NULL column —
+  schema now always enforced in full; (b) provider exceptions left the
+  chat UI stuck on "thinking" — action now catches and toasts.
+FILES/MODULES AFFECTED: .env, src/lib/ai/router.ts,
+  src/lib/actions/chat.ts, scripts/ai-qa.mjs.
+WHY THE CHANGE WAS MADE: user request — prove the LLM path end to end.
+TESTS PERFORMED: browser E2E — tutor 1329-char structured reply, quiz
+  3 questions, 5 contextual flashcards, Settings provider "active",
+  zero console errors; tsc + build green.
+VERIFICATION RESULT: green (free-tier rate limits noted).
+REGRESSION CHECK: smoke 14/14 after fixes.
+NEW ISSUES DISCOVERED: streaming absent → PL-008.
+NEW SUGGESTIONS CREATED: PL-008.
+FINAL STATUS: COMPLETED
+=====================================================================
+
+DATE: 2026-09-05
+SUGGESTION ID: n/a (imported; now tracked as PL-003)
+TITLE: Onboarding wizard never silently disables Continue
+
+WHAT WAS FOUND: Continue button was disabled until a subject name was
+  typed; pressing it on an empty step did nothing with no explanation —
+  user reported being stuck.
+WHAT WAS CHANGED: Continue always responds; incomplete steps show an
+  explicit hint naming exactly what to fill; first input auto-focuses.
+FILES/MODULES AFFECTED: src/components/app/onboarding-wizard.tsx.
+WHY THE CHANGE WAS MADE: user-reported blocker.
+TESTS PERFORMED: headless walkthrough of all steps, hints fire on
+  empty steps, zero console errors.
+VERIFICATION RESULT: green.
+REGRESSION CHECK: typecheck + build green.
+NEW ISSUES DISCOVERED: none.
+NEW SUGGESTIONS CREATED: —
+FINAL STATUS: COMPLETED
+=====================================================================
+
+DATE: 2026-09-05
+SUGGESTION ID: n/a (imported; now tracked as PL-004)
+TITLE: Google OAuth sign-in
+
+WHAT WAS FOUND: Email/password only.
+WHAT WAS CHANGED: GET /auth/google (state cookie CSRF guard) →
+  GET /auth/google/callback (code exchange, verified-email profile,
+  upsert-by-email, session, onboarding-aware redirect); button on
+  login/signup when configured; friendly error banners.
+FILES/MODULES AFFECTED: src/app/auth/google/*, src/lib/auth/google.ts,
+  src/components/auth/auth-form.tsx, login/signup pages, .env.example.
+WHY THE CHANGE WAS MADE: user request (Google Cloud Console OAuth).
+TESTS PERFORMED: consent redirect 307 correct; real Google consent page
+  rendered (HTTP 200); failure paths redirect with friendly banners;
+  button renders when configured. Full interactive account creation
+  NOT VERIFIED (requires human consent click).
+VERIFICATION RESULT: green for all automatable checks.
+REGRESSION CHECK: tsc + build green.
+NEW ISSUES DISCOVERED: LAN-IP redirect URI limitation (documented);
+  GitHub provider opportunity → PL-017.
+NEW SUGGESTIONS CREATED: PL-017.
+FINAL STATUS: COMPLETED
+=====================================================================
+
+DATE: 2026-09-06
+SUGGESTION ID: PL-001 + PL-002
+TITLE: LAN-IP cookie rejection + fresh-account dashboard crash
+
+WHAT WAS FOUND: (1) Production builds marked the session cookie Secure;
+  browsers silently reject Secure cookies over plain HTTP on
+  non-localhost hosts — user on http://192.168.56.1:3000 was bounced to
+  /login the moment onboarding finished (cookie trace: 0 cookies
+  stored). (2) The fix exposed a second crash: fresh accounts with no
+  topics have no plan blocks, and relativeDay("") threw
+  RangeError: Invalid time value on the dashboard.
+WHAT WAS CHANGED: (1) Session cookie Secure flag now derived from the
+  real request protocol (x-forwarded-proto aware) — session.ts; same
+  for the OAuth state cookie, plus request-origin fallback for the
+  OAuth redirect base — auth/google/route.ts. (2) Dashboard renders
+  relativeDay only when data.today exists; Today page falls back to
+  todayISO() — app/page.tsx, today/page.tsx.
+FILES/MODULES AFFECTED: src/lib/auth/session.ts,
+  src/app/auth/google/route.ts, src/app/app/page.tsx,
+  src/app/app/today/page.tsx, README (troubleshooting).
+WHY THE CHANGE WAS MADE: user-reported blocker ("after login I am not
+  going to front").
+TESTS PERFORMED: cookie-level CDP trace; full browser E2E on
+  http://192.168.56.1:3000 (signup → all steps → dashboard, zero
+  console/server errors); DB check (onboarded=1); typecheck, 19/19
+  tests, build, smoke 14/14; test accounts cleaned up.
+VERIFICATION RESULT: green.
+REGRESSION CHECK: localhost flow re-verified implicitly via smoke.
+NEW ISSUES DISCOVERED: the crash class shows Next's default error page
+  → PL-006 (error boundaries) promoted to next-up.
+NEW SUGGESTIONS CREATED: PL-006.
+FINAL STATUS: COMPLETED (both)
+=====================================================================
+
+DATE: 2026-09-06
+SUGGESTION ID: PL-006
+TITLE: Root error boundary + not-found page
+
+WHAT WAS FOUND: No src/app/error.tsx, global-error.tsx or not-found.tsx
+  existed — any server crash (the PL-002 class) rendered Next's default
+  off-brand error screen.
+WHAT WAS CHANGED: Added branded route-segment error boundary (Try again
+  reset + dashboard link + digest display), branded 404 page, and a
+  minimal global-error boundary (own html/body, inline styles — root
+  CSS unavailable there).
+FILES/MODULES AFFECTED: src/app/error.tsx, src/app/not-found.tsx,
+  src/app/global-error.tsx (all new).
+WHY THE CHANGE WAS MADE: graceful on-brand degradation for any future
+  crash; direct follow-up to the week's incident.
+TESTS PERFORMED: tsc clean; build green; smoke 14/14 (confirms the new
+  boundaries don't intercept healthy routes).
+VERIFICATION METHOD NOTE: live error-page render was NOT VERIFIED via a
+  thrown route error (would require shipping a defect); markup verified
+  by build + the boundary contract is Next.js-tested behavior.
+REGRESSION CHECK: full smoke 14/14 green.
+NEW ISSUES DISCOVERED: none.
+NEW SUGGESTIONS CREATED: —
+FINAL STATUS: COMPLETED
+=====================================================================
+
+DATE: 2026-09-06
+SUGGESTION ID: PL-007
+TITLE: Per-user rate limiting + prompt-injection hardening on AI chat
+
+WHAT WAS FOUND: sendChatMessageAction had no per-user call limit
+  (unbounded LLM cost/abuse) and raw user text was interpolated into the
+  LLM system context unguarded.
+WHAT WAS CHANGED: (1) src/lib/security/rate-limit.ts — in-memory
+  sliding-window limiter (single-instance by design; shared-store noted
+  for the Postgres phase), 20 msgs / 5 min per user, throttle feedback
+  surfaced as a chat toast. (2) src/lib/security/guard.ts — control-char
+  stripping, identical-line collapse, <<<USER_MESSAGE>>> delimiters +
+  untrusted-input directive in the system prompt. (3) Wired into
+  sendChatMessageAction (limit → sanitize → persist → respond) and
+  freeformOrTutor (wrapUntrusted on the model input).
+FILES/MODULES AFFECTED: src/lib/security/* (new), src/lib/actions/chat.ts,
+  src/lib/ai/router.ts, tests/security.test.ts (new), scripts/ai-qa.mjs
+  (test harness fixes only).
+WHY THE CHANGE WAS MADE: the one endpoint that spends money and talks to
+  a model had two unclosed exposures; blast radius bounded by design but
+  worth closing.
+TESTS PERFORMED: 12 new unit tests (31 total, all pass) — including two
+  that caught real bugs in my first draft (self-extending block window;
+  off-by-one spam collapse) before deployment; tsc; build; smoke 14/14;
+  LLM chat E2E regression through the secured path (tutor 1389 chars,
+  quiz 3 questions, flashcards Q/A — distinct contextual replies read
+  from DB ground truth; zero console errors).
+VERIFICATION RESULT: all green.
+REGRESSION CHECK: smoke 14/14 + chat E2E green on the secured path.
+NEW ISSUES DISCOVERED: ai-qa.mjs harness had three flaws (stale profile
+  session auto-redirect past login; DOM bubble reads race React; shared
+  bubble classes made history look like replies) — fixed by profile
+  wipe per run + DB ground-truth polling. No app defects.
+NEW SUGGESTIONS CREATED: PL-013 (auth-endpoint rate limiting, P2 —
+  limiter reusable as-is).
+FINAL STATUS: COMPLETED
+=====================================================================
+
+ENTRY #10
+DATE: 2026-09-06
+SUGGESTION ID: PL-013
+TITLE: Rate limiting on auth endpoints (login/signup brute-force defense)
+
+WHAT WAS FOUND: loginAction/signupAction accepted unlimited attempts;
+  scrypt made online guessing slow but not free; OAuth callback token
+  exchange was also unbounded. The PL-007 limiter was generic and ready
+  to reuse — only auth-specific wiring was missing.
+
+WHAT WAS CHANGED: New src/lib/security/request-key.ts
+  (clientIpFromHeaders — x-forwarded-for first hop, x-real-ip fallback,
+  "local" for direct access; retryMinutes). authRateLimit() guard in
+  src/lib/auth/actions.ts: login keyed per-email (5/15min, NAT-safe)
+  plus per-IP (30/15min); signup per-IP (5/hour). Google OAuth callback
+  limited 10/15min per IP, fail-closed → /login?error=google_rate:<m>
+  with a friendly banner (new resolveAuthError parser on the login page).
+
+FILES/MODULES AFFECTED: src/lib/auth/actions.ts,
+  src/app/auth/google/callback/route.ts, src/app/login/page.tsx,
+  src/lib/security/request-key.ts (new), tests/request-key.test.ts (new),
+  scripts/tmp-auth-throttle.mjs (temporary, removed).
+
+WHY THE CHANGE WAS MADE: Online brute force against login (and abuse of
+  the callback's outbound calls) had no cost ceiling. Limits are
+  deliberately generous because the user accesses via a shared LAN IP.
+
+TESTS PERFORMED: 6 new unit tests (37 total, all pass) covering XFF
+  parsing, fallbacks, NAT keying and retry-minute rounding. Live browser
+  hammer test through the real login form: attempts 1-5 → normal auth
+  error; attempt 6+ → "Too many sign-in attempts … 15 minute(s)";
+  different email on same IP → unaffected; zero console errors. tsc;
+  build; smoke 14/14.
+
+VERIFICATION RESULT: all green; live throttle behavior matches design
+  exactly (server-side debug line confirmed counts climb 1→5 then block).
+
+REGRESSION CHECK: full gates re-run after removing debug logging —
+  tsc clean, 37/37 tests, build OK, smoke 14/14.
+
+NEW ISSUES DISCOVERED: the live test initially LOOKED like the limiter
+  was broken; instrumentation proved the app was fine — the harness was
+  calling requestSubmit() while the submit button was disabled mid-
+  action, so submissions were silently dropped and the stale alert
+  matched. Lesson recorded: anchor UI tests on the pending cycle
+  (spinner appear → clear), never on stale DOM text.
+
+NEW SUGGESTIONS CREATED: none (post-audit found no new debt; the
+  in-process limiter's multi-instance limitation is already documented
+  inside rate-limit.ts and revisited by the Postgres phase PL-009).
+FINAL STATUS: COMPLETED
+=====================================================================
+
+ENTRY #11
+DATE: 2026-09-06
+SUGGESTION ID: PL-011
+TITLE: ESLint debt: 20 errors, 39 warnings
+
+WHAT WAS FOUND: lint reported 83 errors / 13,575 warnings — but the true
+  app debt was 20 errors / 40 warnings. The explosion came from
+  scripts/.chrome-profile/ (QA browser residue containing minified
+  third-party Chrome extension bundles that flat-config ESLint, which
+  does not read .gitignore, happily linted). Residue deleted; config
+  hardened with globalIgnores for venv/data/QA profiles/screenshots.
+
+WHAT WAS CHANGED: All 20 errors fixed by class, no suppressions:
+  14× react/no-unescaped-entities (apostrophes → &apos;; render
+  identical); 2× no-explicit-any in charts.tsx (proper TooltipEntry
+  type); 4× react-hooks/set-state-in-effect — theme-toggle.tsx rewritten
+  to useSyncExternalStore + sp-theme-change event (React-documented
+  external-store pattern), dialog.tsx rewritten as a single
+  closed/opening/open-vis/closing phase machine with render-time prop
+  adjustment, syllabus-manager AddTopicDialog form reset via remount-key
+  (sequence counter bumped on open so exit animation still plays).
+  All 39 warnings cleared: unused imports/locals removed; the
+  curriculum.ts requireUser bindings kept where user.id is the
+  ownership WHERE clause (my batch edit briefly broke this — tsc caught
+  it, restored 9 sites, kept bare-guard await for 6 unused ones).
+
+FILES/MODULES AFFECTED: eslint.config.mjs, src/app/app/page.tsx,
+  src/app/app/progress/page.tsx, src/app/app/subjects/page.tsx,
+  src/app/app/today/page.tsx, src/app/page.tsx,
+  src/components/app/{app-shell,calendar-view,charts,chat-view,exam-
+  manager,onboarding-wizard,plan-item-row,syllabus-manager,task-
+  manager}.tsx, src/components/ui/{dialog,theme-toggle}.tsx,
+  src/lib/actions/{curriculum,onboarding}.ts, src/lib/db/demo.ts,
+  src/lib/engine/schedule.ts, src/lib/services/{achievements,analytics,
+  chat,data,plan}.ts, scripts/{ai-qa,flow-qa,visual-qa}.mjs.
+
+WHY THE CHANGE WAS MADE: Lint must be a trustworthy CI gate (PL-010).
+  The set-state-in-effect rewrites also future-proof against React's
+  coming behavior changes and remove cascading-render risk.
+
+TESTS PERFORMED: lint 0 problems; tsc clean; 37/37 unit tests; build
+  OK; smoke 14/14; PLUS a dedicated interactive browser regression for
+  the two rewritten primitives: dialog open → Escape → exit-animation
+  unmount → reopen-with-fresh-state all pass; theme toggle cycles
+  (system→light→dark) with html.dark sync and localStorage persistence;
+  zero console errors. Temp verification script removed after pass.
+
+VERIFICATION RESULT: all green.
+
+REGRESSION CHECK: full gate suite above; interactive dialog/theme
+  behavior verified unchanged (or better) after rewrite.
+
+NEW ISSUES DISCOVERED: achievements bug (see below) was found BY the
+  lint cleanup, not by a failure.
+NEW SUGGESTIONS CREATED: none.
+FINAL STATUS: COMPLETED
+
+BUG FOUND & FIXED DURING PL-011 (not a lint issue itself):
+  src/lib/services/achievements.ts computed subjectsCompleted but never
+  wired it into the achievement values map — subject_first ("Finish
+  your first subject syllabus") and subject_all ("Syllabus Slayer")
+  could NEVER unlock for any user. Both now derive from
+  subjectsCompleted with a zero-subjects guard on subject_all.
+  Verified by code inspection + full test suite; live unlock flow NOT
+  separately exercised (would need a fully completed subject fixture).
+=====================================================================
+
+ENTRY #12
+DATE: 2026-09-06
+SUGGESTION ID: PL-010
+TITLE: CI pipeline (GitHub Actions): typecheck + tests + build + smoke on every push
+
+WHAT WAS FOUND: No .github directory; all gates manual. Also discovered
+  `npm ci` FAILED on the repo as-is: package.json carried unsatisfiable
+  ranges (`lucide-react: "^0.5"` — no such version) alongside exact
+  pins, so CI would have died at the install step. Separately found
+  that the project sits UNTRACKED inside a home-directory git repo
+  (C:/Users/aKris → Krishna.git) — no push of the project itself has
+  ever happened, so a workflow file alone cannot produce a runner run.
+
+WHAT WAS CHANGED: .github/workflows/ci.yml — one `verify` job on
+  ubuntu-latest, Node 24 (matches local runtime), npm cache, push/PR/
+  manual triggers, concurrency cancellation. Sequence mirrors the local
+  gate suite: lint → typecheck → tests → build → smoke (smoke boots its
+  own server on :3100, pure fetch — no browser needed in CI). All deps
+  pinned to exact locked versions (lucide-react 1.41.0, recharts
+  3.10.1, zod 4.5.4, etc.) and the lockfile regenerated via
+  `npm install --package-lock-only`; `npm ci --dry-run` now exits 0.
+
+FILES/MODULES AFFECTED: .github/workflows/ci.yml (new), package.json,
+  package-lock.json.
+
+WHY THE CHANGE WAS MADE: Regressions could land silently; every gate
+  depended on discipline. Exact pins make CI reproducible and make
+  `npm ci` (which requires lockfile/package.json agreement) possible.
+
+TESTS PERFORMED: YAML structure parsed and step list verified (js-yaml);
+  `npm ci --dry-run` exit 0; workflow file confirmed not git-ignored
+  (git check-ignore); full local gate suite after the dependency
+  repin: lint 0 problems, tsc clean, 37/37 tests, build OK, smoke 14/14.
+
+VERIFICATION RESULT: everything verifiable locally is green. The live
+  GitHub Actions runner run is NOT VERIFIED — impossible until the
+  project is pushed to GitHub as its own repository. Stated per rule 19.
+
+REGRESSION CHECK: full gate suite green after repinning dependencies
+  (the repin was the only runtime-affecting change; versions match the
+  lockfile that was already installed locally).
+
+NEW ISSUES DISCOVERED: the untracked-project/git-repo-mismatch (above)
+  is the blocking dependency for the live CI run.
+NEW SUGGESTIONS CREATED: none (repo separation is a user action, not a
+  code change; noted in the backlog summary).
+FINAL STATUS: PARTIALLY COMPLETED — workflow shipped; live run pending push.
+=====================================================================
