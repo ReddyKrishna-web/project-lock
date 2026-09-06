@@ -608,3 +608,64 @@ NEW SUGGESTIONS CREATED: none.
 FINAL STATUS: PL-012 COMPLETED. Next unblocked per priority:
   PL-015 (PDF syllabus import), which can reuse the extraction
   service added in the materials feature.
+=====================================================================
+ENTRY #17 — PL-015: PDF syllabus import (extraction + AI parsing)
+=====================================================================
+DATE: 2026-09-06
+SUGGESTION ID: PL-015
+TITLE: PDF syllabus import (extraction + AI parsing)
+
+WHAT WAS FOUND: Syllabus entry was manual-only; onboarding copy
+  promised future import support. During E2E, a second bug surfaced:
+  extract.ts targeted a pdf-parse module shape (plain text() export)
+  that does not match the installed v2.4.5 (PDFParse class with
+  getText()) — PDF text extraction was broken for uploads.
+
+WHAT WAS CHANGED:
+  - src/lib/services/syllabus-parse.ts (NEW): LLM structuring via
+    askForJson with Zod validation that CLAMPS difficulty (1..5) and
+    TRUNCATES over-cap arrays item-by-item instead of rejecting
+    wholesale (3 test-caught bugs fixed here); deterministic regex
+    heuristic fallback (unit/module/chapter headings, noise-line
+    filter, min-signal threshold of 8 topics without headings).
+  - src/lib/actions/import.ts (NEW): parseSyllabusImportAction
+    (validate → extract → parse → single-use 48-hex preview token,
+    15-min TTL) and commitSyllabusImportAction (token single-use +
+    user-bound, ownership re-checked, user-EDITED preview wins,
+    caps 12 units/40 topics per import).
+  - src/components/app/syllabus-import.tsx (NEW): import dialog —
+    file picker → parse → editable preview tree (rename subject/
+    units/topics, difficulty, remove) → confirm; honest AI/engine
+    source badge and warnings.
+  - src/lib/services/extract.ts: extractPdf rewritten to support
+    pdf-parse v2.4+ class API (new PDFParse({data}).getText() with
+    destroy()) AND the legacy function shape — fixes broken PDF
+    extraction for materials uploads too.
+  - src/app/app/syllabus/page.tsx: "Import syllabus" button wired.
+  - tests/syllabus-parse.test.ts (NEW): 6 tests — heuristic parse,
+    noise/signal thresholds, caps, schema clamping/truncation.
+  - scripts/pdf-import-qa.ts (NEW, kept as QA): builds a real PDF in
+    memory, runs production extraction + parse paths.
+
+FILES/MODULES AFFECTED: as above (2 new services/actions, 2 new
+  components/tests, 1 QA script, extract.ts fix, syllabus page).
+
+WHY THE CHANGE WAS MADE: Typing a full syllabus is the largest
+  onboarding cost (PL-015); preview/confirm flow contains parsing
+  quality risk; nothing touches the DB without explicit confirmation.
+
+TESTS PERFORMED: 43/43 vitest (6 new); tsc clean; eslint 0;
+  build OK; smoke 14/14; PDF IMPORT E2E: real hand-built PDF →
+  539 chars extracted → AI parse (Groq) → 4 units / 12 topics,
+  subject renamed from filename, all units correct.
+
+VERIFICATION RESULT: PASS (live AI path + deterministic fallback
+  both exercised; heuristic path covered by unit tests).
+
+REGRESSION CHECK: Full gate suite green; the extract.ts fix also
+  repairs PDF material uploads (same code path).
+
+NEW ISSUES DISCOVERED: none open (scanned-PDF/OCR limitation already
+  tracked as PL-024).
+NEW SUGGESTIONS CREATED: none.
+FINAL STATUS: PL-015 COMPLETED.

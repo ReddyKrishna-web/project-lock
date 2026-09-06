@@ -42,14 +42,39 @@ export async function extractText(
   }
 }
 
+type PdfParseModule = {
+  PDFParse?: new (options: { data: Uint8Array }) => {
+    getText(): Promise<{ text?: string }>;
+    destroy?(): Promise<void>;
+  };
+  text?: (b: Buffer) => Promise<string>;
+  default?: PdfParseModule;
+};
+
 async function extractPdf(buffer: Buffer): Promise<string> {
-  const pdfParse = await import("pdf-parse");
-  // pdf-parse v2 ships both CJS and ESM builds with different shapes.
-  const mod = pdfParse as unknown as { text?: (b: Buffer) => Promise<string>; default?: { text?: (b: Buffer) => Promise<string> } };
-  const fn = mod.text ?? mod.default?.text;
-  if (!fn) throw new Error("pdf-parse module shape unrecognized");
-  const out = await fn.call(pdfParse, buffer);
-  return (out ?? "").replace(/\u0000/g, "").trim().slice(0, MAX_MATERIAL_CHARS);
+  const mod = (await import("pdf-parse")) as unknown as PdfParseModule;
+  // pdf-parse v2.4+ (ESM): PDFParse class with getText()
+  const PDFParse = mod.PDFParse ?? mod.default?.PDFParse;
+  if (typeof PDFParse === "function") {
+    const parser = new PDFParse({ data: new Uint8Array(buffer) });
+    try {
+      const result = await parser.getText();
+      return (result?.text ?? "").replace(/\u0000/g, "").trim().slice(0, MAX_MATERIAL_CHARS);
+    } finally {
+      try {
+        await parser.destroy?.();
+      } catch {
+        /* destroy is best-effort */
+      }
+    }
+  }
+  // Legacy/alternate builds: plain text() function
+  const legacy = mod.text ?? mod.default?.text;
+  if (legacy) {
+    const out = await legacy.call(mod, buffer);
+    return (out ?? "").replace(/\u0000/g, "").trim().slice(0, MAX_MATERIAL_CHARS);
+  }
+  throw new Error("pdf-parse module shape unrecognized");
 }
 
 async function extractWord(buffer: Buffer): Promise<string> {
