@@ -1,6 +1,6 @@
 import { requireUser } from "@/lib/auth/actions";
 import { getAppData } from "@/lib/services/data";
-import { ExamManager } from "@/components/app/exam-manager";
+import { ExamsWorkspace } from "@/components/app/exams-workspace";
 
 export const dynamic = "force-dynamic";
 
@@ -12,10 +12,11 @@ export default async function ExamsPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Exams</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Am I ready? Readiness blends syllabus coverage with whether the remaining work fits your available time.
+          Am I ready? Readiness blends syllabus coverage with whether the remaining work fits your available time — then
+          prove it in the Quiz and Summary Practice workspace.
         </p>
       </div>
-      <ExamManager
+      <ExamsWorkspace
         exams={data.exams}
         subjects={data.subjects.map((s) => ({ id: s.id, name: s.name }))}
       />

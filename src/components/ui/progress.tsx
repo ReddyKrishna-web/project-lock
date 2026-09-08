@@ -16,7 +16,7 @@ export function Progress({
 }) {
   const v = Math.max(0, Math.min(100, value));
   const color = {
-    primary: "bg-primary",
+    primary: "bg-lime",
     success: "bg-success",
     warning: "bg-warning",
     danger: "bg-danger",
@@ -28,12 +28,11 @@ export function Progress({
       aria-valuenow={Math.round(v)}
       aria-valuemin={0}
       aria-valuemax={100}
-      className={cn("h-1.5 w-full overflow-hidden rounded-full bg-muted", trackClassName)}
-    >
-      <div
-        className={cn("bar-grow h-full rounded-full transition-[width] duration-700 ease-out", color, className)}
-        style={{ width: `${v}%` }}
-      />
+      className={cn("h-4 w-full overflow-hidden rounded-[4px] border-2 border-ink bg-card", trackClassName)}
+    >        <div
+          className={cn("bar-grow h-full border-r-2 border-ink transition-[width] duration-700 ease-out", color, className)}
+          style={{ width: `${v}%` }}
+        />
     </div>
   );
 }

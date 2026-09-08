@@ -133,21 +133,29 @@ export function groupTopicsByUnit(unitRows: Unit[], topicRows: Topic[]): UnitAgg
   }));
 }
 
-export function subjectProgress(flat: TopicAgg[]): { progress: number; completedTopics: number; weak: TopicAgg[] } {
+export function subjectProgress(flat: TopicAgg[]): { progress: number; completedTopics: number; weak: TopicAgg[]; estimatedHours: number } {
   let weight = 0;
   let credit = 0;
   let completed = 0;
+  let hoursLeft = 0;
   const weak: TopicAgg[] = [];
   for (const t of flat) {
     weight += t.weight;
     credit += t.weight * TOPIC_CREDIT[t.status];
     if (t.status === "completed") completed++;
     if (t.status === "needs_revision") weak.push(t);
+    // Unfinished topics carry remaining study time: difficulty 1..5 maps
+    // to a 1..4 hour band (learning topics count at half weight).
+    if (t.status !== "completed") {
+      const base = 0.5 + t.difficulty * 0.7; // ≈1.2h..4h
+      hoursLeft += base * (t.status === "learning" ? 0.5 : 1);
+    }
   }
   return {
     progress: weight > 0 ? Math.round((credit / weight) * 100) : 0,
     completedTopics: completed,
     weak: weak.sort((a, b) => b.difficulty - a.difficulty).slice(0, 4),
+    estimatedHours: Math.round(hoursLeft * 10) / 10,
   };
 }
 
@@ -437,7 +445,7 @@ export async function getAppData(userId: string): Promise<AppData> {
     const aggs = perSubjectUnits.get(s.id) ?? [];
     const flat: TopicAgg[] = aggs.flatMap((u) => u.topics);
     topicAggsBySubject.set(s.id, flat);
-    const { progress, completedTopics, weak } = subjectProgress(flat);
+    const { progress, completedTopics, weak, estimatedHours } = subjectProgress(flat);
     const examRow = examBySubject.get(s.id);
     return {
       id: s.id,
@@ -448,6 +456,7 @@ export async function getAppData(userId: string): Promise<AppData> {
       progress,
       completedTopics,
       totalTopics: flat.length,
+      estimatedHours,
       units: aggs,
       weakTopics: weak.map((w) => ({ id: w.id, name: w.name, difficulty: w.difficulty })),
       exam: examRow

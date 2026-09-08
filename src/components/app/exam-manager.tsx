@@ -28,7 +28,7 @@ function ExamCard({ exam, onDelete }: { exam: ExamAgg; onDelete: () => void }) {
           <div className="flex flex-wrap items-center gap-2">
             <CardTitle>{exam.examName}</CardTitle>
             {exam.subjectName && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground shadow-inset-sm">
                 <span className="h-1.5 w-1.5 rounded-full" style={{ background: exam.subjectColor ?? "var(--color-muted-foreground)" }} />
                 {exam.subjectName}
               </span>
@@ -86,10 +86,9 @@ function ExamCard({ exam, onDelete }: { exam: ExamAgg; onDelete: () => void }) {
         </div>
 
         {/* phases */}
-        <div className="mt-5">
-          <button
+        <div className="mt-5">            <button
             onClick={() => setOpen((v) => !v)}
-            className="flex w-full items-center justify-between rounded-xl bg-muted/50 px-3.5 py-2.5 text-[13px] font-semibold transition-colors hover:bg-muted cursor-pointer"
+            className="flex w-full items-center justify-between rounded-xl bg-muted/50 px-3.5 py-2.5 text-[13px] font-semibold shadow-inset-sm transition-colors hover:bg-muted cursor-pointer"
             aria-expanded={open}
           >
             Exam roadmap
@@ -100,7 +99,7 @@ function ExamCard({ exam, onDelete }: { exam: ExamAgg; onDelete: () => void }) {
               {exam.phases.map((p, i) => (
                 <li key={p.key} className="relative flex gap-3 pl-1">
                   <div className="flex flex-col items-center">
-                    <span className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold", i === exam.phases.length - 1 ? "bg-success text-white" : "bg-primary-soft text-primary")}>
+                    <span className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold", i === exam.phases.length - 1 ? "bg-success text-white shadow-raise-sm" : "bg-card text-primary shadow-raise-sm")}>
                       {i + 1}
                     </span>
                     {i < exam.phases.length - 1 && <span className="mt-1 w-px flex-1 bg-border" />}

@@ -53,7 +53,7 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
           apply(next);
         }}
         aria-label={`Theme: ${current.label}. Click to change.`}
-        className="flex h-9 items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-medium transition-colors hover:bg-muted cursor-pointer"
+        className="flex h-9 items-center gap-2 rounded-xl bg-card px-3 text-sm font-medium shadow-raise-sm tactile cursor-pointer"
       >
         <Icon className="h-4 w-4" />
         <span className="hidden sm:inline">{current.label}</span>
@@ -62,7 +62,11 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
   }
 
   return (
-    <div className="inline-flex items-center rounded-xl border border-border bg-muted/60 p-1" role="radiogroup" aria-label="Color theme">
+    <div
+      className="inline-flex items-center rounded-xl bg-muted p-1 shadow-inset-sm"
+      role="radiogroup"
+      aria-label="Color theme"
+    >
       {options.map((o) => {
         const Icon = o.icon;
         const active = theme === o.key;
@@ -73,8 +77,8 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
             aria-checked={active}
             onClick={() => apply(o.key)}
             className={cn(
-              "relative inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium transition-all",
-              active ? "bg-card text-foreground pop-shadow" : "text-muted-foreground hover:text-foreground",
+              "relative inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium transition-all duration-150",
+              active ? "bg-card text-foreground shadow-raise-sm" : "text-muted-foreground hover:text-foreground",
             )}
           >
             <Icon className="h-3.5 w-3.5" />

@@ -4,9 +4,10 @@ import { FocusTimer } from "@/components/app/focus-timer";
 
 export const dynamic = "force-dynamic";
 
-export default async function FocusPage() {
+export default async function FocusPage({ searchParams }: { searchParams: Promise<{ autostart?: string }> }) {
   const user = await requireUser();
   const data = await getAppData(user.id);
+  const params = await searchParams;
   const todayItems = (data.today?.items ?? []).filter((i) => i.kind !== "break");
 
   return (
@@ -22,6 +23,7 @@ export default async function FocusPage() {
         subjects={data.subjects}
         defaultMinutes={data.user.focusMinutes}
         defaultBreak={data.user.breakMinutes}
+        autoStart={params.autostart === "1"}
       />
     </div>
   );

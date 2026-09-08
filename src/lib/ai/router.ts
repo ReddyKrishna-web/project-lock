@@ -3,6 +3,7 @@ import type { AiReply, ChatContext } from "./types";
 import { getAiProvider, askForJson } from "./provider";
 import { AiReplySchema } from "./types";
 import { wrapUntrusted, UNTRUSTED_DIRECTIVE } from "@/lib/security/guard";
+import { buildStudyAids } from "@/lib/services/chat";
 
 /* ──────────────────────────────────────────────────────────────
    Deterministic intents handled by the StudyPilot engine — no
@@ -298,6 +299,7 @@ export async function llmChatParams(
 ): Promise<{ system: string; user: string; temperature: number; maxTokens: number }> {
   const snapshot = buildSnapshot(ctx);
   const materials = buildMaterials(ctx);
+  const studyAids = buildStudyAids(ctx);
   const isTutor = intent === "explain";
   const role =
     intent === "quiz"
@@ -313,6 +315,7 @@ export async function llmChatParams(
   const system = [
     "You are StudyPilot AI (called Pilot), an encouraging but no-nonsense academic assistant inside a study app — and a capable general assistant beyond it.",
     "Never invent facts about the student — ground student-data claims in the snapshot JSON below.",
+    "When the student asks about something covered by their flashcards or mind maps, answer from those first and say so (e.g. 'your cards on this say…', 'your mind map breaks this into…') — then expand with general knowledge where it genuinely helps.",
     "Keep replies under ~200 words unless the student asks for depth.",
     "Use plain markdown: **bold** for emphasis, short bullet lists.",
     mode === "json"
@@ -321,6 +324,7 @@ export async function llmChatParams(
     UNTRUSTED_DIRECTIVE,
     role,
     materials,
+    studyAids,
     `Student snapshot:\n${snapshot}`,
   ].join("\n\n");
 

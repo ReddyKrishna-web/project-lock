@@ -669,3 +669,444 @@ NEW ISSUES DISCOVERED: none open (scanned-PDF/OCR limitation already
   tracked as PL-024).
 NEW SUGGESTIONS CREATED: none.
 FINAL STATUS: PL-015 COMPLETED.
+=====================================================================
+ENTRY #18 — Tuning: personalized per-subject knowledge (RAG, not model training)
+=====================================================================
+DATE: 2026-09-07
+SUGGESTION ID: PL-023 (completed) + user brief (Tuning system)
+TITLE: Tuning — subject knowledge bases from user PDFs with grounded,
+        personalized, visual answers
+
+WHAT WAS FOUND: Pilot answered from at most 8 recency-ordered material
+  excerpts; no per-subject memory, no semantic retrieval, no background
+  processing, no visuals beyond text. (Phase 1 audit: provider
+  abstraction + Zod-validated router + sync base64 uploads + no job
+  queue confirmed.)
+
+WHAT WAS CHANGED:
+  - Schema (2 migrations): knowledge_bases, knowledge_documents
+    (raw_blob consumed by the worker, then cleared), knowledge_chunks
+    (section-aware chunks + embedding JSON), tuning_jobs (idempotent
+    queue with backoff), tuning_prefs (adjustable detail level).
+  - src/lib/tuning/: embed (provider /embeddings with deterministic
+    local fallback, per-KB source never mixed), chunk (heading-aware
+    split + overlap), patterns (concepts/definitions/relationships/
+    topic tree/question cues/style notes/summary — all counted, none
+    claimed), query (type/complexity/visual classifier + KB matcher),
+    jobs (DB-backed queue, CAS claim, retry 3x with backoff,
+    fire-and-forget pump so users can leave mid-run), retrieve
+    (user+subject-scoped cosine retrieval, authorized progress
+    signals, deterministic composer with honest thin-coverage path),
+    state (server-rendered dashboard state).
+  - src/lib/actions/tuning.ts: KB CRUD, multi-PDF upload (10/req,
+    15MB, PDF-only, dedupe), retry/delete, scoped ask (10/5min limit),
+    prefs, provider image generation with honest fallback.
+  - AIProvider.generateImage? added (OpenAI images dialect); Tuning
+    visuals prefer structured Mermaid + SVG concept maps + real-data
+    week graphs — never fabricated numbers.
+  - UI: /app/tuning (dashboard, drag-drop upload, live status with
+    real progress, insights, ask panel with subject override + source
+    badges); sidebar Tuning entry. Smoke covers /app/tuning.
+  - tests/tuning.test.ts: 15 tests (pipeline, embeddings, patterns,
+    classifier, retry schedule) — one caught a real bug pre-deploy
+    ("briefly" missed the brevity cue).
+
+FILES/MODULES AFFECTED: schema + 2 migrations, lib/tuning/* (7 new),
+  lib/actions/tuning.ts (new), app/tuning/page + tuning-dashboard
+  (new), app-shell nav, ai/types + provider, scripts/smoke.mjs,
+  tests/tuning.test.ts (new).
+
+WHY THE CHANGE WAS MADE: user brief — an assistant that tunes itself
+  around each student's own materials, subjects, and progress. Called
+  Tuning in UI; internally RAG throughout, never claimed as model
+  training.
+
+TESTS PERFORMED: 58/58 vitest (15 new); tsc clean; eslint 0 errors;
+  build OK; smoke 15/15 (incl. new tuning check); live E2E with a
+  hand-built PDF through upload → pump → retrieval → answer →
+  flowchart spec: PASS (doc ready, 2 chunks, cross-user retrieval 0,
+  KB counts correct after a real ordering fix; throwaway script
+  removed afterwards).
+
+VERIFICATION RESULT: all green.
+
+REGRESSION CHECK: full gate suite + smoke green; chat/materials paths
+  untouched (Tuning is additive; syllabus excerpts unchanged).
+
+NEW ISSUES DISCOVERED: none open. (Single-instance in-process worker
+  documented in jobs.ts; moves to a dedicated worker with PL-009.)
+NEW SUGGESTIONS CREATED: none.
+FINAL STATUS: COMPLETED.
+=====================================================================
+ENTRY #19 - PL-025: Tuning Intelligence Engine (decision architecture)
+=====================================================================
+DATE: 2026-09-08
+SUGGESTION ID: PL-025
+TITLE: Tuning Intelligence Engine - understand first, generate last
+
+WHAT WAS FOUND: Tuning answered retrieve-then-generate. No subject
+  priority (single matchKnowledgeBase call), single-label
+  classification, no intent analysis, no response-strategy choice,
+  visuals by keyword only, personalization attached to every answer
+  whether relevant or not, no validation discipline, no preference
+  learning, and the LLM prompt carried raw recency-ordered excerpts.
+
+WHAT WAS CHANGED:
+  - src/lib/tuning/intelligence/ (NEW, 11 modules, pure + tested):
+    types (shared decision vocabulary); subject-detection (explicit
+    > workspace > conversation > auto; explicit never overridden);
+    classify (multi-label, 15 categories, never forced into one);
+    intent (quick_fact/learn/exam_prep/revise/apply from cues, weak
+    areas disambiguate); strategy (A-F selection + section
+    skeletons); visual-decision (visuals earn their place; graphs
+    require real data - never fabricated; image falls back to
+    structured maps without a provider); subject-map (hierarchy
+    generated from sections + co-occurrence, never hard-coded);
+    profile (evidence-based notes only, no personality judgments);
+    context-builder (rank/dedupe/cap 5 passages, scope re-check for
+    user+subject isolation); validator (selective - trivial answers
+    skip; uncertainty block instead of hallucination); pipeline
+    (decideBeforeRetrieval -> scoped retrieval -> decideAfterRetrieval).
+  - src/lib/actions/tuning.ts: askTuningAction runs the pipeline;
+    deterministic composer kept (strategy-aware legacy-plan mapping);
+    LLM prompt now carries budgeted context + strategy instruction +
+    only-relevant personal note; visual_mismatch degrades with an
+    honest sentence; each ask records count-only preference signals.
+  - tuningPrefs.signalsJson (migration 0006) + reset action; dashboard
+    shows suggested-stage learned prefs with a reset control (section 18).
+  - tests/tuning-intelligence.test.ts (NEW): 23 tests, one per
+    section-23 acceptance criterion.
+  - Drive-bys: eslint ignore generalized to scripts/.chrome-*/** (new
+    QA browser profiles re-broke lint with 189 third-party errors -
+    same class as PL-011); unused catch binding in assess/summary.ts.
+
+FILES/MODULES AFFECTED: as above (11 new, 4 edited, 1 migration, 1 test).
+
+WHY THE CHANGE WAS MADE: user brief - the Tuning Intelligence Engine
+  spec (sections 1-23). Staged per the incremental plan: RAG foundation
+  (PL-023) reused, not duplicated; each layer lands as pure decisions
+  before generation.
+
+TESTS PERFORMED: 94/94 vitest (23 new); tsc clean; eslint 0 errors
+  (3 warnings remain, all in untracked scratch QA scripts);
+  next build OK; smoke 16/16 including /app/tuning (migration 0006
+  applied cleanly at boot).
+
+VERIFICATION RESULT: all green.
+
+REGRESSION CHECK: retrieval/composer paths unchanged in behavior
+  (legacy-plan mapping verified by existing tuning tests, still
+  passing); chat/materials/assess paths untouched.
+
+NEW ISSUES DISCOVERED: none open. (Ask panel is stateless, so
+  conversation-context resolution is plumbed but idle - tracked as
+  the PL-025 upgrade opportunity, not a defect.)
+
+NEW SUGGESTIONS CREATED: PL-025 (this entry).
+FINAL STATUS: COMPLETED.
+=====================================================================
+ENTRY #20 - PL-026: Study Intelligence Upgrade
+=====================================================================
+DATE: 2026-09-08
+SUGGESTION ID: PL-026
+TITLE: Syllabus-based quiz, general quiz, AI flashcards, AI mind maps
+
+WHAT WAS FOUND: Quiz required pasted material (8-row textbox) even
+  when the syllabus held the content; difficulty (easy/mixed/hard)
+  was stored but only echoed as a word in the prompt; flashcards
+  table existed with zero UI; no mind maps; no Study nav section.
+
+WHAT WAS CHANGED:
+  - src/lib/study/ (NEW shared layer): sources.ts (ownership-checked
+    syllabus context: subject/unit/topic + subject-scoped notes,
+    capped; pure builder unit-tested); difficulty.ts (per-level
+    generation contracts; hard stays inside the material);
+    scheduling.ts (SM-2-lite intervals, prompt coercion).
+  - src/lib/assess/quiz.ts: difficulty block injected into quiz
+    generation; NEW general-quiz path (prompt-validated, general
+    knowledge, same Zod-validated output); strongTopicsFromGrading
+    (strengths need 2+ clean answers).
+  - src/lib/assess/flashcards.ts + mindmaps.ts (NEW): teacher-style
+    flashcard sets (varied kinds, memory tips) and capped structured
+    mind-map JSON (6 branches, 5 children), both Zod-validated.
+  - src/lib/actions/study.ts (NEW): syllabus/general quiz actions
+    (attempts carry source tracking in promptJson - no new tables),
+    flashcard generate/list/grade/delete (existing table, source ai),
+    stateless mind-map action, study-signals action (revision topics
+    + recent server-graded misses). assess.ts finish now returns
+    strongTopics too.
+  - UI: QuizRunner rebuilt around a Syllabus/General toggle with
+    shared SyllabusScopePicker, compact prompt (rows=3), Easy/Medium/
+    Hard; feedback/progress/results preserved + Strengths section.
+    Flashcards studio (generate, flip viewer, Easy/Need practice/Hard
+    ratings, saved decks, "worth reviewing" chips from real signals).
+    Mind-map studio (structured SVG tree, collapse, zoom, responsive
+    scroll). Routes /app/flashcards + /app/mindmaps; nav (desktop
+    Tools, mobile More, titles); smoke covers both.
+  - tests/study.test.ts (NEW): 14 tests - scoping, difficulty
+    contracts, prompt validation, schema caps, scheduling, strengths
+    evidence rule.
+
+FILES/MODULES AFFECTED: 6 new lib modules, 1 new actions file, 3 new
+  components, 2 new pages, quiz-runner + assess.ts edits, nav, smoke,
+  tests. Zero migrations (existing tables reused).
+
+WHY THE CHANGE WAS MADE: user brief - unified AI learning system
+  (Syllabus -> Pilot analysis -> Quiz/Flashcards/Mind Maps), one
+  shared retrieval path, no duplicated syllabus data.
+
+TESTS PERFORMED: 108/108 vitest (14 new); tsc clean; eslint 0 errors
+  (3 pre-existing warnings in untracked scratch QA scripts);
+  next build OK; smoke 18/18 including both new pages.
+
+VERIFICATION RESULT: all green.
+
+REGRESSION CHECK: quiz check/finish/grading untouched (existing
+  assess tests still pass); Summary Practice flow keeps
+  StudyMaterialInput; chat/materials/tuning paths untouched.
+
+NEW ISSUES DISCOVERED: none open. (Build caught a real bug
+  pre-deploy: sync helper exported from a "use server" module -
+  moved to lib/study/scheduling.ts. Lint caught set-state-in-effect
+  defaults - replaced with render-time derivation.)
+
+NEW SUGGESTIONS CREATED: PL-026 (this entry).
+FINAL STATUS: COMPLETED.
+=====================================================================
+ENTRY #21 - PL-026 follow-up: flashcard reveal, NotebookLM mind maps,
+saved maps, Pilot connection
+=====================================================================
+DATE: 2026-09-08
+SUGGESTION ID: PL-026 (follow-up)
+TITLE: Flashcard answer reveal, reliable mind-map design, Pilot grounding
+
+WHAT WAS FOUND (user-reported): (1) Flashcards never showed the
+  answer - tap-to-flip was the only reveal path, and the Easy / Need
+  practice / Hard buttons auto-advanced to the next card, so rating
+  felt like skipping. (2) The mind-map SVG tree rendered nothing
+  visible for the user. (3) Mind maps were stateless, so Pilot could
+  not reference them; flashcards were invisible to Pilot too.
+
+WHAT WAS CHANGED:
+  - flashcards-studio Viewer: explicit Show answer / Hide answer
+    buttons (reveal never depends on the flip animation); ratings
+    record recall and stay on the card with a "Marked as ..." state -
+    they never navigate.
+  - mindmap-studio: SVG replaced with a NotebookLM-style HTML tree -
+    central topic pill, one colored branch card per idea, expand /
+    collapse, zoom, horizontal scroll on small screens. Every node is
+    real text, so there is nothing that can render blank.
+  - mindmaps table (migration 0007) + save on every generation +
+    saved-maps list with re-view and delete in the studio.
+  - Pilot connection: ChatContext.studyAids (recent 15 flashcards +
+    recent 5 maps, capped excerpts, owned data only); pure
+    buildStudyAids renderer (src/lib/study/study-aids.ts - DB-free so
+    unit tests never touch migrations); wired into Pilot's system
+    prompt with a cite-your-cards instruction; general answers
+    otherwise unchanged.
+  - 3 new tests for the aids renderer (empty, reference, cap).
+
+TESTS PERFORMED: 111/111 vitest; tsc clean; eslint 0 errors;
+  next build OK; smoke 18/18 (migration 0007 applied cleanly).
+
+VERIFICATION RESULT: all green.
+
+REGRESSION CHECK: quiz/flashcard generation paths untouched;
+  existing study + assess tests still pass.
+
+NEW ISSUES DISCOVERED: none open. (Full-suite vitest run caught a
+  real race pre-deploy: importing services/chat pulled the DB
+  migration chain into a worker - pure renderer moved to
+  lib/study/study-aids.ts.)
+
+NEW SUGGESTIONS CREATED: none.
+FINAL STATUS: COMPLETED.
+=====================================================================
+ENTRY #22 - PL-026 follow-up 2: verified reveal, true NotebookLM tree
+=====================================================================
+DATE: 2026-09-08
+SUGGESTION ID: PL-026 (follow-up 2)
+TITLE: Bulletproof flashcard reveal + real tree mind map
+
+WHAT WAS FOUND (user re-reported): answers still not showing on the
+  user's machine; mind map still not NotebookLM-like. Browser repro
+  (Playwright + screenshots as demo) showed both render correctly in
+  a clean Chromium - so the 3D flip was removed as the fragile piece
+  (GPU/backface quirks vary by browser), and the vertical branch list
+  was replaced with a genuine fanning tree.
+
+WHAT WAS CHANGED:
+  - flashcards-studio: 3D flip container replaced with plain
+    conditional front/back panels (soft fade, tap or explicit
+    Show/Hide answer buttons). Nothing depends on backface or GPU
+    transforms anymore.
+  - mindmap-studio: true tree layout (layoutTree, unit-tested) -
+    central topic node, branches alternating left/right with curved
+    bezier connectors, HTML nodes, per-branch accent colors,
+    collapse toggles, zoom, scroll-pan in a capped viewport.
+  - Verified with real-browser screenshots: answer panel with Answer
+    badge + recall + Hide answer renders; tree renders center +
+    both-side branches + connectors with zero console/page errors.
+  - Repro script + seeded rows removed afterwards (DB left as found).
+
+TESTS PERFORMED: 113/113 vitest (2 new layout tests: both-side
+  placement, link-per-node invariant, collapse hides leaves); tsc
+  clean; eslint 0 errors; build OK; smoke 18/18.
+
+VERIFICATION RESULT: all green, screenshots confirmed.
+
+REGRESSION CHECK: flashcard generation/grading untouched; saved
+  decks + mind-map persistence unchanged.
+
+NEW ISSUES DISCOVERED: none open. Note for the user: saved cards and
+  maps are per account - 16 cards + 1 map live under
+  a.lucifer1432@gmail.com, not the demo account; sign in with the
+  account that generated them.
+
+NEW SUGGESTIONS CREATED: none.
+FINAL STATUS: COMPLETED.
+=====================================================================
+ENTRY #23 - Neo-brutalism redesign Phase 0 + Phase 1
+=====================================================================
+DATE: 2026-09-08
+SUGGESTION ID: n/a (redesign track: .idea/md/01-07)
+TITLE: Brutal tokens/fonts/lint guard + ui primitives migration
+
+WHAT WAS FOUND: App used soft neumorphic depth (dual blurred shadows,
+  bevels, glass, orbs, shine, tilt-3d) + Zilla Slab/Inter Tight; no
+  guard against soft-shadow regressions. Full redesign spec landed in
+  .idea/md/ (research + tokens + components + pages + roadmap +
+  a11y + QA).
+
+WHAT WAS CHANGED (additive, rollback-safe - old classes aliased):
+  - layout.tsx: Archivo Black / Space Grotesk / JetBrains Mono added
+    alongside existing faces (font-brutal-display/sans/mono tokens).
+  - globals.css: brutal @theme tokens (paper/ink/line, lime/coral/
+    blue/yellow/pink/cyan, semantic + 6 subject fills, 3-tier hard
+    shadows, 6px radii) with runtime --brutal-ink/shadow vars so dark
+    mode inverts to cream borders+shadows; .brutal-press/card/chip/
+    input/ledger/grid/marquee utilities; .tactile/.hover-lift/
+    .card-shadow/.ledger kept as aliases; focus upgraded to 3px solid
+    + 2px offset (yellow in dark); mobile shadow step-down; marquee
+    in reduced-motion kill. Soft-UI classes untouched (Phase 5).
+  - eslint guard (warn): bans shadow-sm/md/lg/xl/2xl, backdrop-blur,
+    bg-gradient- in app/ui/app-components - fires only on the 5 known
+    pre-Phase-2 sites (avatar, dialog, app-shell, mindmap x2).
+  - ui/button: lime primary / white secondary / ink / danger-fill,
+    2px ink borders, hard shadows, mechanical press; md h-11, 6px
+    radius; global 3px focus (base overrides removed).
+  - ui/card: 2px ink + shadow-brutal + Archivo Black titles.
+  - ui/badge: mono uppercase bordered chips with hard sm shadow.
+  - ui/input: h-11, 2px ink, hard blue-shadow focus (no ring blur).
+  - ui/progress: h-4 bordered track, lime fill + ink edge.
+  - ui/skeleton: flat bordered blocks (shimmer removed); empty-state
+    hardened. ui/switch: w-12/h-7, lime-on, bordered knob.
+  - New --color-inkfill token (fixed #111 text on lime/yellow/pink
+    fills so contrast holds in dark mode).
+
+TESTS PERFORMED: tsc clean; eslint 0 errors (8 warnings: 3 pre-
+  existing scratch scripts + 5 intended guard warnings); 113/113
+  vitest; build OK; smoke 18/18; production-CSS check confirms all
+  brutal utilities + 3 fonts generated; full ui-review.mjs capture
+  (37 shots, every route, light+dark, desktop+mobile): 0 console
+  errors, 0 horizontal overflow; dashboard + settings screenshots
+  inspected in both themes.
+
+VERIFICATION RESULT: all green, screenshots confirmed.
+
+REGRESSION CHECK: engine/actions/db untouched (visual only); old
+  class aliases keep every call site rendering.
+
+NEW ISSUES DISCOVERED: none. Next per roadmap: Phase 2 (dialog,
+  toaster, theme-toggle, app-shell).
+
+NEW SUGGESTIONS CREATED: none.
+FINAL STATUS: COMPLETED (Phase 0 + Phase 1).
+=====================================================================
+ENTRY #24 - Typewriter voice across all UI/UX + dashboard
+=====================================================================
+DATE: 2026-09-08
+SUGGESTION ID: n/a (user request, redesign track)
+TITLE: Special Elite display + Courier Prime body/mono everywhere
+
+WHAT WAS FOUND: Redesign had landed Archivo Black/Space Grotesk/
+  JetBrains Mono; user asked for a typewriter font across the whole
+  product including the dashboard.
+
+WHAT WAS CHANGED:
+  - layout.tsx: Courier_Prime (400/700) + Special_Elite loaded via
+    next/font (display: swap), variables on html + body.
+  - globals.css: --font-sans now Courier Prime (global body voice);
+    --font-display now Special Elite (all h1/h2); brutal tokens
+    repointed (display -> Special Elite, sans+mono -> Courier Prime);
+    display tracking neutralized (typewriter collides under tight
+    grotesk tracking). Archivo/Space/JetBrains stay loaded as
+    fallbacks until Phase 5.
+  - Chosen pair: Special Elite (authentic typewriter, display/stamps
+    only) + Courier Prime (readable monospace, body/chips/inputs) -
+    full typewriter feel without sacrificing small-text legibility.
+
+TESTS PERFORMED: tsc clean; eslint 0 errors; 113/113 vitest; build
+  OK; production-CSS check (both faces + variables present); live
+  screenshots of dashboard + landing (demo session): typewriter
+  headings, body, chips, stamps render; 0 console errors. Temp
+  script + shots removed; dev server stopped.
+
+VERIFICATION RESULT: all green, screenshots confirmed.
+
+REGRESSION CHECK: font-only change; no layout/class/logic edits.
+
+NEW ISSUES DISCOVERED: none.
+NEW SUGGESTIONS CREATED: none.
+FINAL STATUS: COMPLETED.
+=====================================================================
+ENTRY #25 - Real AI models (OpenRouter/Grok/Gemini) + rollback
+=====================================================================
+DATE: 2026-09-08
+SUGGESTION ID: n/a (user request: 3 keys + rollback + verify)
+TITLE: Multi-provider chain with automatic failover + one-cmd rollback
+
+WHAT WAS FOUND: Single AI_* env config (Groq via OpenAI dialect);
+  no per-provider keys, no failover, no config rollback story.
+
+WHAT WAS CHANGED:
+  - provider.ts: OpenAICompatibleProvider + GeminiProvider take
+    explicit per-key config (legacy env = defaults); new
+    ChainProvider tries members in AI_PRIORITY order for complete/
+    stream/image/vision (members without stream deliver complete()
+    as one honest delta); getAiProvider() returns the chain so all
+    15 call sites fail over with zero edits; describeChain() reports
+    key presence + models (never secrets); getEmbeddingsConfig()
+    routes Tuning embeddings OpenRouter -> legacy -> local.
+    Gemini gained SSE streaming (streamGenerateContent).
+  - embed.ts/state.ts: embeddings + availability via the new config.
+  - settings page: shows live chain ("openrouter -> grok ...") +
+    primary model instead of the single legacy vars.
+  - scripts/ai-config.mjs (new): snapshot (.env -> timestamped
+    backup), restore (one-command rollback, keeps pre-restore copy),
+    status (key presence + models, never values), probe (live
+    endpoint check per provider).
+  - .env.example + README env table document the full contract.
+  - tests/ai-chain.test.ts (new, 12 tests): order, failover,
+    exhaustion error, empty chain, stream fallback, priority
+    parsing, legacy append, no secret leakage, embeddings routing.
+
+LIVE VERIFICATION (real completions, not just endpoint probes):
+  - OpenRouter (openai/gpt-4o-mini): 200 CHAIN-OK.
+  - Gemini: key valid; gemini-2.0-flash retired (404) -> switched
+    to gemini-2.5-flash (from live models list): 200 GEMINI-OK +
+    SSE streaming transport verified.
+  - Groq legacy (existing AI_*): 200 CHAIN-OK (kept as fallback).
+  - xAI Grok: key REJECTED ("Incorrect API key" - gsk_ prefix is
+    Groq-format, not xAI). OPEN ITEM for user: paste a real xAI key
+    (console.x.ai, xai-...) or drop Grok from AI_PRIORITY.
+
+TESTS PERFORMED: tsc clean; eslint 0 errors; 125/125 vitest
+  (12 new; one tuning test flaked once, passes in isolation + 2
+  consecutive full runs); build OK; smoke 18/18.
+
+REGRESSION CHECK: legacy AI_* path preserved as final chain member;
+  .env snapshot pre-multikey taken before keys were written.
+
+NEW SUGGESTIONS CREATED: none.
+FINAL STATUS: COMPLETED (pending real xAI key - see open item).

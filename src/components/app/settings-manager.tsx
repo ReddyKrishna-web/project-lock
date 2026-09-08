@@ -2,12 +2,11 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Brain, CalendarClock, KeyRound, Save, UserRound } from "lucide-react";
+import { Brain, CalendarClock, KeyRound, MessageSquareHeart, Save, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, Input, Select, Textarea } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useToast } from "@/components/ui/toaster";
 import {
   saveAvailabilityAction,
@@ -15,6 +14,8 @@ import {
   saveProfileAction,
 } from "@/lib/actions/settings";
 import type { AppUserProfile } from "@/lib/services/types";
+import { FeedbackCard } from "./feedback-form";
+import { VoiceSelector } from "@/components/app/voice-selector";
 
 const TIMES = [
   { key: "morning", label: "Morning (8–12)" },
@@ -165,8 +166,8 @@ export function SettingsManager({
                   <button
                     key={t.key}
                     onClick={() => setTimes(on ? times.filter((x) => x !== t.key) : [...times, t.key])}
-                    className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
-                      on ? "border-primary bg-primary-soft text-primary" : "border-border bg-card text-muted-foreground hover:text-foreground"
+                    className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                      on ? "bg-primary-soft/80 text-primary shadow-inset-sm ring-1 ring-inset ring-primary/30" : "bg-card text-muted-foreground shadow-raise-sm hover:text-foreground"
                     }`}
                   >
                     {t.label}
@@ -181,8 +182,8 @@ export function SettingsManager({
                 <button
                   key={s.key}
                   onClick={() => setStyle(s.key)}
-                  className={`rounded-xl border p-3 text-left transition-colors cursor-pointer ${
-                    style === s.key ? "border-primary bg-primary-soft/60" : "border-border bg-card hover:border-primary/30"
+                  className={`rounded-xl p-3 text-left transition-all cursor-pointer ${
+                    style === s.key ? "bg-primary-soft/70 shadow-inset-sm ring-1 ring-inset ring-primary/25" : "bg-card shadow-raise-sm hover:shadow-raise"
                   }`}
                 >
                   <p className="text-[13px] font-semibold">{s.label}</p>
@@ -213,9 +214,7 @@ export function SettingsManager({
           <CardTitle className="flex items-center gap-2">Appearance & goals</CardTitle>
         </CardHeader>
         <CardBody className="space-y-4">
-          <Field label="Theme">
-            <ThemeToggle />
-          </Field>
+          <VoiceSelector />
           <div className="grid grid-cols-3 gap-3">
             <Field label="Daily goal (min)">
               <Input type="number" min={30} max={720} step={15} value={goalMin} onChange={(e) => setGoalMin(Number(e.target.value))} />
@@ -257,7 +256,7 @@ export function SettingsManager({
         </CardHeader>
         <CardBody className="space-y-3">
           {NOTIFICATION_OPTIONS.map((n) => (
-            <div key={n.key} className="flex items-center justify-between gap-3 rounded-xl border border-border px-3.5 py-2.5">
+            <div key={n.key} className="flex items-center justify-between gap-3 rounded-xl bg-muted/40 px-3.5 py-2.5">
               <div>
                 <p className="text-[13px] font-semibold">{n.label}</p>
                 <p className="text-[11px] text-muted-foreground">{n.desc}</p>
@@ -265,6 +264,18 @@ export function SettingsManager({
               <Switch checked={Boolean(notifs[n.key])} onCheckedChange={(v) => setNotifs({ ...notifs, [n.key]: v })} label={n.label} />
             </div>
           ))}
+        </CardBody>
+      </Card>
+
+      {/* Feedback */}
+      <Card className="lg:col-span-2">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquareHeart className="h-4 w-4 text-muted-foreground" /> Feedback
+          </CardTitle>
+        </CardHeader>
+        <CardBody>
+          <FeedbackCard />
         </CardBody>
       </Card>
 
@@ -276,7 +287,7 @@ export function SettingsManager({
           </CardTitle>
         </CardHeader>
         <CardBody>
-          <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-muted/30 p-4">
+          <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-muted/40 p-4 shadow-inset-sm">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-soft text-accent">
               <KeyRound className="h-5 w-5" />
             </span>

@@ -19,6 +19,21 @@ export interface AIProvider {
    * stream" — resolve with what arrived.
    */
   stream?(system: string, user: string, opts?: { temperature?: number; maxTokens?: number }, onDelta?: (chunk: string) => void): Promise<string>;
+  /**
+   * Optional image generation (illustrations, never precise technical
+   * diagrams — those use structured Mermaid/SVG). Providers without
+   * image support omit this; callers must degrade honestly.
+   */
+  generateImage?(prompt: string): Promise<string>;
+  /**
+   * Optional vision: describe / transcribe / evaluate an image.
+   * Uses AI_VISION_MODEL when set, else AI_MODEL. Providers without
+   * image support omit this; callers must degrade honestly and never
+   * claim an image was analyzed when it was not.
+   */
+  describeImage?(imageBase64: string, mimeType: string, system: string, user: string, opts?: { maxTokens?: number }): Promise<string>;
+  /** True when this provider can attempt image input. */
+  visionCapable?(): boolean;
 }
 
 /** Validated structured reply — the single contract for AI chat output. */
@@ -87,6 +102,11 @@ export type ChatContext = {
   syllabusTopics: ChatTopicInfo[];
   /** Excerpts from the student's uploaded study materials (if any). */
   materials: { fileName: string; subjectName: string; topicName: string | null; excerpt: string }[];
+  /** The student's own generated study aids — flashcards + mind maps Pilot can reference. */
+  studyAids: {
+    flashcards: { front: string; back: string; subjectName: string | null }[];
+    mindmaps: { title: string; branches: { label: string; children: string[] }[] }[];
+  };
   exams: { id: string; name: string; subject: string | null; date: string; daysLeft: number; syllabusPercent: number; readiness: number }[];
   upcomingDeadlines: { title: string; kind: string; daysLeft: number; subject: string | null }[];
   missedThisWeek: number;

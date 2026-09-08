@@ -80,7 +80,7 @@ try {
   await waitForServer();
 
   const home = await get("/");
-  check("landing page", home.status === 200 && home.text.includes("StudyPilot") && home.text.includes("Build My Study Plan"));
+  check("landing page", home.status === 200 && home.text.includes("StudyPilot") && home.text.includes("Build my study plan"));
 
   const login = await get("/login");
   check("login page", login.status === 200 && login.text.includes("demo@studypilot.app"));
@@ -101,6 +101,7 @@ try {
 
   const exams = await get("/app/exams", cookie);
   check("exams page", exams.status === 200 && exams.text.includes("Readiness blends"), exams.status === 200 ? "missing exam content" : `status ${exams.status}`);
+  check("exams assessment tabs", exams.status === 200 && exams.text.includes("Summary Practice"), "quiz/summary workspace");
 
   const tasks = await get("/app/tasks", cookie);
   check("tasks page", tasks.status === 200);
@@ -126,6 +127,15 @@ try {
 
   const settings = await get("/app/settings", cookie);
   check("settings page", settings.status === 200 && settings.text.includes("AI provider"));
+
+  const tuning = await get("/app/tuning", cookie);
+  check("tuning page", tuning.status === 200 && tuning.text.includes("Tuning"), tuning.status === 200 ? "missing tuning content" : `status ${tuning.status}`);
+
+  const flashcards = await get("/app/flashcards", cookie);
+  check("flashcards page", flashcards.status === 200 && flashcards.text.includes("Flashcards"), flashcards.status === 200 ? "missing flashcards content" : `status ${flashcards.status}`);
+
+  const mindmaps = await get("/app/mindmaps", cookie);
+  check("mindmaps page", mindmaps.status === 200 && mindmaps.text.includes("Mind Maps"), mindmaps.status === 200 ? "missing mindmaps content" : `status ${mindmaps.status}`);
 
   const failed = checks.filter((c) => !c.ok);
   console.log(`\n${checks.length - failed.length}/${checks.length} checks passed`);

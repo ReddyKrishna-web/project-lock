@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  blob,
   index,
   integer,
   primaryKey,
@@ -349,6 +350,32 @@ export const flashcards = sqliteTable(
 );
 
 /* ────────────────────────────────────────────────────────────
+   Study mind maps — Pilot-generated, structured (JSON), saved per
+   user so Pilot can reference them later in chat.
+   ──────────────────────────────────────────────────────────── */
+export const mindmaps = sqliteTable(
+  "mindmaps",
+  {
+    id: id("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    subjectId: text("subject_id").references(() => subjects.id, { onDelete: "set null" }),
+    /** Central topic title (also the display name). */
+    title: text("title").notNull(),
+    /** The original request: syllabus scope or general prompt (capped). */
+    prompt: text("prompt").notNull().default(""),
+    /** syllabus | general */
+    source: text("source").notNull().default("syllabus"),
+    /** Validated MindMap JSON: { central, summary, branches[] }. */
+    mapJson: text("map_json").notNull().default("{}"),
+    createdAt: timestamps.createdAt,
+    updatedAt: timestamps.updatedAt,
+  },
+  (t) => [index("mindmaps_user_idx").on(t.userId)],
+);
+
+/* ────────────────────────────────────────────────────────────
    Study materials (uploaded files, extracted text)
    ──────────────────────────────────────────────────────────── */
 export const materialKinds = ["pdf", "image", "word", "excel", "text"] as const;
@@ -365,6 +392,11 @@ export const materials = sqliteTable(
     topicId: text("topic_id").references(() => topics.id, { onDelete: "set null" }),
     fileName: text("file_name").notNull(),
     kind: text("kind", { enum: materialKinds }).notNull(),
+    /** Original MIME type — stored so uploaded images can be served back. */
+    mimeType: text("mime_type"),
+    sizeBytes: integer("size_bytes").notNull().default(0),
+    /** Image bytes — images are retrievable at /api/material/[id]. */
+    rawBlob: blob("raw_blob", { mode: "buffer" }),
     /** Extracted plain text used for AI grounding (null while processing/failed). */
     excerpt: text("excerpt"),
     /** Full extracted text (may be long); excerpt is the truncated view. */
@@ -395,6 +427,415 @@ export const quizAttempts = sqliteTable(
   },
   (t) => [index("quiz_user_idx").on(t.userId)],
 );
+
+/* ──────────────────────────────────────────────────────────────
+   Tuning — subject knowledge bases (RAG, not model training)
+   ────────────────────────────────────────────────────────────── */
+export const kbStatuses = ["empty", "processing", "ready", "partial"] as const;
+export type KbStatus = (typeof kbStatuses)[number];
+
+export const knowledgeBases = sqliteTable(
+  "knowledge_bases",
+  {
+    id: id("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** Optional link to a curriculum subject; null = standalone tuned space. */
+    subjectId: text("subject_id").references(() => subjects.id, { onDelete: "set null" }),
+    name: text("name").notNull(),
+    status: text("status", { enum: kbStatuses }).notNull().default("empty"),
+    docCount: integer("doc_count").notNull().default(0),
+    readyDocCount: integer("ready_doc_count").notNull().default(0),
+    conceptCount: integer("concept_count").notNull().default(0),
+    /** JSON: { coreConcepts[], definitions[], relationships[], topicTree, questionPatterns[], terminologyNotes[], summary } */
+    profileJson: text("profile_json").notNull().default("{}"),
+    /** "local" | "provider" — which embedding source built the index. */
+    embeddingSource: text("embedding_source").notNull().default("local"),
+    lastProcessedAt: text("last_processed_at"),
+    createdAt: timestamps.createdAt,
+    updatedAt: timestamps.updatedAt,
+  },
+  (t) => [
+    index("kb_user_idx").on(t.userId),
+    index("kb_subject_idx").on(t.subjectId),
+  ],
+);
+
+export const tuningDocStatuses = [
+  "uploaded",
+  "queued",
+  "reading",
+  "chunking",
+  "indexing",
+  "patterns",
+  "ready",
+  "failed",
+] as const;
+export type TuningDocStatus = (typeof tuningDocStatuses)[number];
+
+export const knowledgeDocuments = sqliteTable(
+  "knowledge_documents",
+  {
+    id: id("id").primaryKey(),
+    kbId: text("kb_id")
+      .notNull()
+      .references(() => knowledgeBases.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    fileName: text("file_name").notNull(),
+    mimeType: text("mime_type").notNull().default("application/pdf"),
+    sizeBytes: integer("size_bytes").notNull().default(0),
+    charCount: integer("char_count").notNull().default(0),
+    chunkCount: integer("chunk_count").notNull().default(0),
+    status: text("status", { enum: tuningDocStatuses }).notNull().default("uploaded"),
+    /** 0..100 — real pipeline progress, never simulated. */
+    progress: integer("progress").notNull().default(0),
+    error: text("error"),
+    /** Raw upload bytes — consumed by the background worker, then cleared. */
+    rawBlob: blob("raw_blob", { mode: "buffer" }),
+    /** Extracted full text (capped); chunks + embeddings derive from this. */
+    fullText: text("full_text"),
+    /** Idempotency: same user + KB + name + size reuses the row. */
+    dedupeKey: text("dedupe_key").notNull().default(""),
+    createdAt: timestamps.createdAt,
+    updatedAt: timestamps.updatedAt,
+  },
+  (t) => [
+    index("kdoc_kb_idx").on(t.kbId),
+    index("kdoc_user_idx").on(t.userId),
+    uniqueIndex("kdoc_dedupe_unique").on(t.userId, t.kbId, t.dedupeKey),
+  ],
+);
+
+export const knowledgeChunks = sqliteTable(
+  "knowledge_chunks",
+  {
+    id: id("id").primaryKey(),
+    docId: text("doc_id")
+      .notNull()
+      .references(() => knowledgeDocuments.id, { onDelete: "cascade" }),
+    kbId: text("kb_id")
+      .notNull()
+      .references(() => knowledgeBases.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    subjectId: text("subject_id").references(() => subjects.id, { onDelete: "set null" }),
+    ord: integer("ord").notNull().default(0),
+    section: text("section"),
+    content: text("content").notNull(),
+    /** JSON array of numbers (provider or local embedding). */
+    embedding: text("embedding").notNull().default("[]"),
+    createdAt: timestamps.createdAt,
+  },
+  (t) => [
+    index("kchunk_kb_idx").on(t.kbId),
+    index("kchunk_doc_idx").on(t.docId),
+    index("kchunk_user_idx").on(t.userId),
+  ],
+);
+
+export const tuningJobStatuses = ["queued", "running", "done", "failed"] as const;
+export type TuningJobStatus = (typeof tuningJobStatuses)[number];
+
+export const tuningJobs = sqliteTable(
+  "tuning_jobs",
+  {
+    id: id("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** process_document | rebuild_profile */
+    type: text("type").notNull().default("process_document"),
+    status: text("status", { enum: tuningJobStatuses }).notNull().default("queued"),
+    progress: integer("progress").notNull().default(0),
+    attempts: integer("attempts").notNull().default(0),
+    maxAttempts: integer("max_attempts").notNull().default(3),
+    /** JSON payload, e.g. { docId } — never trusts client user IDs. */
+    payloadJson: text("payload_json").notNull().default("{}"),
+    /** Idempotency key: one queued/running job per key. */
+    idemKey: text("idem_key").notNull().default(""),
+    error: text("error"),
+    nextRunAt: text("next_run_at"),
+    createdAt: timestamps.createdAt,
+    updatedAt: timestamps.updatedAt,
+    completedAt: text("completed_at"),
+  },
+  (t) => [
+    index("tjob_user_idx").on(t.userId),
+    index("tjob_status_idx").on(t.status, t.nextRunAt),
+    uniqueIndex("tjob_idem_unique").on(t.userId, t.idemKey),
+  ],
+);
+
+/** Per-user Tuning preferences (detail level). Adjustable + resettable. */
+export const tuningPrefs = sqliteTable(
+  "tuning_prefs",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** short | medium | detailed */
+    detailLevel: text("detail_level").notNull().default("medium"),
+    /** JSON: learned preference signals { visualRequests, detailRequests, styleRequests } — counts only, staged temporary → confidence → suggested. */
+    signalsJson: text("signals_json").notNull().default("{}"),
+    updatedAt: timestamps.updatedAt,
+  },
+  (t) => [primaryKey({ columns: [t.userId] })],
+);
+
+/* ──────────────────────────────────────────────────────────────
+   Tuning error lessons — Dynamic Error Learning & Mistake Prevention.
+
+   Controlled Error Memory + retrieval + prevention layer (NOT model
+   retraining). One row = one reusable prevention rule, scoped by
+   userId FIRST then kbId/subject (strict isolation — never cross-user,
+   never cross-subject unless explicitly shared context). Embeddings
+   reuse the same local hashed-vector scheme as knowledgeChunks so no
+   second vector DB is needed.
+   ────────────────────────────────────────────────────────────── */
+export const errorLessonTypes = [
+  "factual_error",
+  "context_error",
+  "reasoning_error",
+  "source_priority_error",
+  "retrieval_error",
+  "format_error",
+  "parsing_error",
+  "user_preference_error",
+  "tool_failure",
+  "workflow_error",
+] as const;
+export type ErrorLessonType = (typeof errorLessonTypes)[number];
+
+export const errorLessonConfidences = ["high", "medium", "low", "unverified"] as const;
+export type ErrorLessonConfidence = (typeof errorLessonConfidences)[number];
+
+export const errorLessonStatuses = ["active", "low_priority", "under_review", "obsolete", "disabled"] as const;
+export type ErrorLessonStatus = (typeof errorLessonStatuses)[number];
+
+export const tuningErrorLessons = sqliteTable(
+  "tuning_error_lessons",
+  {
+    id: id("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** Tuning scope — KB this lesson belongs to (null = user-wide fallback, still user-scoped). */
+    kbId: text("kb_id").references(() => knowledgeBases.id, { onDelete: "cascade" }),
+    subjectId: text("subject_id").references(() => subjects.id, { onDelete: "set null" }),
+    /** Short topic label for relevance filtering (e.g. "Unit 3 normalization"). */
+    topic: text("topic"),
+    errorType: text("error_type", { enum: errorLessonTypes }).notNull().default("factual_error"),
+    mistakeSummary: text("mistake_summary").notNull(),
+    rootCause: text("root_cause").notNull().default(""),
+    correctApproach: text("correct_approach").notNull().default(""),
+    /** The reusable, actionable prevention rule injected into future prompts. */
+    preventionRule: text("prevention_rule").notNull(),
+    /** JSON: { correctionText?, chunkExcerpts?, origin: user_correction|feedback|technical } */
+    sourceEvidence: text("source_evidence").notNull().default("{}"),
+    confidence: text("confidence", { enum: errorLessonConfidences }).notNull().default("unverified"),
+    /** JSON: { keywords: string[] } — compact relevance metadata (no full conversations). */
+    relevanceMetadata: text("relevance_metadata").notNull().default("{}"),
+    /** JSON array of numbers (same local hashed-vector scheme as chunks) for fast relevance ranking. */
+    embedding: text("embedding").notNull().default("[]"),
+    occurrenceCount: integer("occurrence_count").notNull().default(1),
+    usageCount: integer("usage_count").notNull().default(0),
+    status: text("status", { enum: errorLessonStatuses }).notNull().default("active"),
+    createdAt: timestamps.createdAt,
+    updatedAt: timestamps.updatedAt,
+    lastOccurredAt: text("last_occurred_at"),
+    lastUsedAt: text("last_used_at"),
+  },
+  (t) => [
+    index("errlesson_user_idx").on(t.userId),
+    index("errlesson_kb_idx").on(t.kbId),
+    index("errlesson_user_kb_idx").on(t.userId, t.kbId),
+    index("errlesson_status_idx").on(t.status),
+  ],
+);
+
+/* ──────────────────────────────────────────────────────────────
+   Profile feedback (product + controlled AI/Pilot improvement)
+   ────────────────────────────────────────────────────────────── */
+export const feedbackCategories = [
+  "ai_answer",
+  "pilot",
+  "tuning",
+  "accuracy",
+  "performance",
+  "ui_ux",
+  "bug",
+  "feature",
+  "general",
+] as const;
+export type FeedbackCategory = (typeof feedbackCategories)[number];
+
+export const feedbackStatuses = ["submitted", "analyzed", "verified", "learned", "resolved"] as const;
+export type FeedbackStatus = (typeof feedbackStatuses)[number];
+
+export const feedback = sqliteTable(
+  "feedback",
+  {
+    id: id("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    category: text("category", { enum: feedbackCategories }).notNull().default("general"),
+    rating: integer("rating"),
+    text: text("text").notNull(),
+    /** JSON: { feature?, interactionRef? } — minimal context only, never full histories. */
+    contextJson: text("context_json").notNull().default("{}"),
+    status: text("status", { enum: feedbackStatuses }).notNull().default("submitted"),
+    createdAt: timestamps.createdAt,
+    updatedAt: timestamps.updatedAt,
+  },
+  (t) => [index("feedback_user_idx").on(t.userId), index("feedback_status_idx").on(t.status)],
+);
+
+export type Feedback = typeof feedback.$inferSelect;
+
+/* ──────────────────────────────────────────────────────────────
+   Learning Community Hub (private, anonymous-by-default)
+   ────────────────────────────────────────────────────────────── */
+export const communityRoles = ["admin", "member"] as const;
+export type CommunityRole = (typeof communityRoles)[number];
+
+export const communityStatuses = ["active", "closed"] as const;
+export type CommunityStatus = (typeof communityStatuses)[number];
+
+export const communities = sqliteTable(
+  "communities",
+  {
+    id: id("id").primaryKey(),
+    name: text("name").notNull(),
+    description: text("description").notNull().default(""),
+    subject: text("subject"),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: text("status", { enum: communityStatuses }).notNull().default("active"),
+    createdAt: timestamps.createdAt,
+    updatedAt: timestamps.updatedAt,
+  },
+  (t) => [index("community_creator_idx").on(t.createdBy)],
+);
+
+export type Community = typeof communities.$inferSelect;
+
+export const communityMemberships = sqliteTable(
+  "community_memberships",
+  {
+    id: id("id").primaryKey(),
+    communityId: text("community_id")
+      .notNull()
+      .references(() => communities.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    role: text("role", { enum: communityRoles }).notNull().default("member"),
+    createdAt: timestamps.createdAt,
+  },
+  (t) => [
+    uniqueIndex("membership_unique").on(t.communityId, t.userId),
+    index("membership_community_idx").on(t.communityId),
+    index("membership_user_idx").on(t.userId),
+  ],
+);
+
+export type CommunityMembership = typeof communityMemberships.$inferSelect;
+
+export const communityInvites = sqliteTable(
+  "community_invites",
+  {
+    id: id("id").primaryKey(),
+    communityId: text("community_id")
+      .notNull()
+      .references(() => communities.id, { onDelete: "cascade" }),
+    /** SHA-256 of the token — the raw token is shown once, never stored. */
+    tokenHash: text("token_hash").notNull(),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    expiresAt: text("expires_at"),
+    maxUses: integer("max_uses").notNull().default(0), // 0 = unlimited
+    useCount: integer("use_count").notNull().default(0),
+    revokedAt: text("revoked_at"),
+    createdAt: timestamps.createdAt,
+  },
+  (t) => [index("invite_community_idx").on(t.communityId), uniqueIndex("invite_token_unique").on(t.tokenHash)],
+);
+
+export type CommunityInvite = typeof communityInvites.$inferSelect;
+
+export const communityMaterials = sqliteTable(
+  "community_materials",
+  {
+    id: id("id").primaryKey(),
+    communityId: text("community_id")
+      .notNull()
+      .references(() => communities.id, { onDelete: "cascade" }),
+    uploadedBy: text("uploaded_by")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    fileName: text("file_name").notNull(),
+    mimeType: text("mime_type").notNull().default("application/octet-stream"),
+    sizeBytes: integer("size_bytes").notNull().default(0),
+    rawBlob: blob("raw_blob", { mode: "buffer" }),
+    status: text("status").notNull().default("active"), // active | removed
+    createdAt: timestamps.createdAt,
+  },
+  (t) => [index("cmat_community_idx").on(t.communityId)],
+);
+
+export type CommunityMaterial = typeof communityMaterials.$inferSelect;
+
+export const communityQuestionStatuses = ["open", "answered", "resolved"] as const;
+export type CommunityQuestionStatus = (typeof communityQuestionStatuses)[number];
+
+export const communityQuestions = sqliteTable(
+  "community_questions",
+  {
+    id: id("id").primaryKey(),
+    communityId: text("community_id")
+      .notNull()
+      .references(() => communities.id, { onDelete: "cascade" }),
+    authorId: text("author_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    content: text("content").notNull().default(""),
+    subject: text("subject"),
+    status: text("status", { enum: communityQuestionStatuses }).notNull().default("open"),
+    createdAt: timestamps.createdAt,
+    updatedAt: timestamps.updatedAt,
+  },
+  (t) => [index("cquestion_community_idx").on(t.communityId)],
+);
+
+export type CommunityQuestion = typeof communityQuestions.$inferSelect;
+
+export const communityAnswers = sqliteTable(
+  "community_answers",
+  {
+    id: id("id").primaryKey(),
+    questionId: text("question_id")
+      .notNull()
+      .references(() => communityQuestions.id, { onDelete: "cascade" }),
+    authorId: text("author_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    content: text("content").notNull(),
+    helpful: integer("helpful", { mode: "boolean" }).notNull().default(false),
+    status: text("status").notNull().default("active"), // active | removed
+    createdAt: timestamps.createdAt,
+  },
+  (t) => [index("canswer_question_idx").on(t.questionId)],
+);
+
+export type CommunityAnswer = typeof communityAnswers.$inferSelect;
 
 /* ──────────────────────────────────────────────────────────────
    Motivation & notifications
@@ -490,9 +931,55 @@ export type StudySession = typeof studySessions.$inferSelect;
 export type ChatConversation = typeof chatConversations.$inferSelect;
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type Flashcard = typeof flashcards.$inferSelect;
+export type Mindmap = typeof mindmaps.$inferSelect;
 export type Material = typeof materials.$inferSelect;
 export type QuizAttempt = typeof quizAttempts.$inferSelect;
 export type Achievement = typeof achievements.$inferSelect;
 export type UserAchievement = typeof userAchievements.$inferSelect;
+/* ──────────────────────────────────────────────────────────────
+   Exams assessment workspace (Quiz + Summary Practice)
+   ────────────────────────────────────────────────────────────── */
+export const assessmentModes = ["quiz", "summary"] as const;
+export type AssessmentMode = (typeof assessmentModes)[number];
+export const assessmentStatuses = ["draft", "active", "graded"] as const;
+export type AssessmentStatus = (typeof assessmentStatuses)[number];
+
+/**
+ * One assessment run. Quiz questions (with correct answers) live here as
+ * trusted JSON — the client never decides correctness; grading reads
+ * this row. Answer images are never persisted (processed in-memory).
+ */
+export const assessmentAttempts = sqliteTable(
+  "assessment_attempts",
+  {
+    id: id("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    subjectId: text("subject_id").references(() => subjects.id, { onDelete: "set null" }),
+    mode: text("mode", { enum: assessmentModes }).notNull(),
+    status: text("status", { enum: assessmentStatuses }).notNull().default("draft"),
+    /** Truncated study material (capped) — the ground truth for this run. */
+    materialExcerpt: text("material_excerpt").notNull().default(""),
+    /** sha256 of the full material — detects swaps between calls. */
+    materialHash: text("material_hash").notNull().default(""),
+    /** JSON: quiz questions OR summary prompt (+config). */
+    promptJson: text("prompt_json").notNull().default("{}"),
+    /** JSON: submitted answers / evaluation result. */
+    resultJson: text("result_json").notNull().default("{}"),
+    score: integer("score"),
+    createdAt: timestamps.createdAt,
+    updatedAt: timestamps.updatedAt,
+  },
+  (t) => [index("assess_user_idx").on(t.userId), index("assess_mode_idx").on(t.userId, t.mode)],
+);
+
 export type Notification = typeof notifications.$inferSelect;
 export type AIRecommendation = typeof aiRecommendations.$inferSelect;
+export type AssessmentAttempt = typeof assessmentAttempts.$inferSelect;
+export type KnowledgeBase = typeof knowledgeBases.$inferSelect;
+export type KnowledgeDocument = typeof knowledgeDocuments.$inferSelect;
+export type KnowledgeChunk = typeof knowledgeChunks.$inferSelect;
+export type TuningJob = typeof tuningJobs.$inferSelect;
+export type TuningPrefs = typeof tuningPrefs.$inferSelect;
+export type TuningErrorLesson = typeof tuningErrorLessons.$inferSelect;

@@ -35,7 +35,7 @@ function ChartTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-xl border border-border bg-card px-3 py-2 pop-shadow">
+    <div className="neo-float rounded-xl border border-border/50 bg-elevated px-3 py-2">
       <p className="text-xs font-semibold text-foreground">{label}</p>
       {payload.map((p: TooltipEntry, i: number) => (
         <p key={i} className="text-xs text-muted-foreground">

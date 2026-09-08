@@ -10,6 +10,7 @@ import {
   Edit3,
   FilePlus2,
   Plus,
+  Search,
   Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -18,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, Input, Select, Textarea } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/skeleton";
+import { Ring } from "@/components/ui/progress";
 import { useToast } from "@/components/ui/toaster";
 import {
   addTopicAction,
@@ -116,7 +118,21 @@ export function SyllabusManager({ subjects }: { subjects: SubjectAgg[] }) {
   const router = useRouter();
   const { toast } = useToast();
   const [selectedId, setSelectedId] = React.useState(subjects[0]?.id ?? "");
+  const [query, setQuery] = React.useState("");
+  const [statusFilter, setStatusFilter] = React.useState("all");
   const selected = subjects.find((s) => s.id === selectedId) ?? subjects[0];
+
+  React.useEffect(() => {
+    const stored = window.localStorage.getItem("studypilot-syllabus-subject");
+    if (stored && subjects.some((subject) => subject.id === stored)) setSelectedId(stored);
+  }, [subjects]);
+
+  const selectSubject = (id: string) => {
+    setSelectedId(id);
+    window.localStorage.setItem("studypilot-syllabus-subject", id);
+    setQuery("");
+    setStatusFilter("all");
+  };
 
   const [editing, setEditing] = React.useState<TopicAgg | null>(null);
   const [addingTopic, setAddingTopic] = React.useState<string | false>(false);
@@ -157,12 +173,12 @@ export function SyllabusManager({ subjects }: { subjects: SubjectAgg[] }) {
         {subjects.map((s) => (
           <button
             key={s.id}
-            onClick={() => setSelectedId(s.id)}
+            onClick={() => selectSubject(s.id)}
             className={cn(
-              "flex w-full items-center gap-3 rounded-2xl border px-3.5 py-3 text-left transition-all cursor-pointer",
+              "flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-left transition-all duration-200 cursor-pointer",
               s.id === selected.id
-                ? "border-primary/40 bg-primary-soft/60 shadow-sm"
-                : "border-border bg-card hover:border-primary/20",
+                ? "bg-primary-soft/70 shadow-inset-sm ring-1 ring-inset ring-primary/25"
+                : "bg-card shadow-raise-sm hover:shadow-raise",
             )}
           >
             <span className="h-9 w-9 shrink-0 rounded-xl" style={{ background: `${s.color}22` }}>
@@ -182,6 +198,26 @@ export function SyllabusManager({ subjects }: { subjects: SubjectAgg[] }) {
       {/* Syllabus body */}
       <Card>
         <CardBody className="pt-5">
+          <div className="mb-5 grid gap-4 rounded-2xl bg-primary-soft/40 p-4 sm:grid-cols-[auto_1fr] sm:items-center">
+            <Ring value={selected.progress} size={92} stroke={9} label={`${selected.progress}%`} sublabel="complete" />
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Selected subject</p>
+              <h2 className="mt-1 text-xl font-bold tracking-tight">{selected.name}</h2>
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                <span>{selected.completedTopics}/{selected.totalTopics} topics complete</span>
+                <span>{selected.units.length} units</span>
+                <span>≈ {selected.estimatedHours}h remaining</span>
+                {selected.exam && <span>{selected.exam.name} in {selected.exam.daysLeft}d</span>}
+              </div>
+              {selected.weakTopics.length > 0 && (
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                  <span className="font-semibold text-warning">Needs attention: </span>
+                  {selected.weakTopics.slice(0, 5).map((w) => w.name).join(", ")}
+                  {selected.weakTopics.length > 5 && ` +${selected.weakTopics.length - 5} more`}
+                </p>
+              )}
+            </div>
+          </div>
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
             <div>
               <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight">
@@ -196,6 +232,20 @@ export function SyllabusManager({ subjects }: { subjects: SubjectAgg[] }) {
             <Button size="sm" loading={busy} onClick={() => setAddingUnit(true)}>
               <Plus className="h-4 w-4" /> Add unit
             </Button>
+          </div>
+
+          <div className="mb-4 flex flex-wrap gap-2">
+            <label className="relative min-w-56 flex-1">
+              <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search units and topics" className="h-10 w-full rounded-[6px] border-2 border-ink bg-input pl-9 pr-3 text-sm outline-none focus:shadow-[4px_4px_0_0_var(--brutal-focus)]" aria-label="Search syllabus" />
+            </label>
+            <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-auto min-w-36">
+              <option value="all">All statuses</option>
+              <option value="not_started">Not started</option>
+              <option value="learning">Learning</option>
+              <option value="needs_revision">Needs revision</option>
+              <option value="completed">Completed</option>
+            </Select>
           </div>
 
           {selected.units.length === 0 && (
@@ -213,8 +263,15 @@ export function SyllabusManager({ subjects }: { subjects: SubjectAgg[] }) {
           )}
 
           <div className="space-y-4">
-            {selected.units.map((unit) => (
-              <div key={unit.id} className="rounded-2xl border border-border bg-muted/25">
+            {selected.units.map((unit) => {
+              const normalizedQuery = query.trim().toLowerCase();
+              const topics = unit.topics.filter((topic) =>
+                (!normalizedQuery || `${unit.name} ${topic.name} ${topic.description ?? ""}`.toLowerCase().includes(normalizedQuery)) &&
+                (statusFilter === "all" || topic.status === statusFilter),
+              );
+              if (normalizedQuery && !unit.name.toLowerCase().includes(normalizedQuery) && topics.length === 0) return null;
+              return (
+              <div key={unit.id} className="rounded-2xl bg-muted/40 shadow-inset-sm">
                 <div className="flex items-center gap-2 px-4 py-3">
                   <BookOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
                   <p className="flex-1 text-sm font-semibold">{unit.name}</p>
@@ -240,11 +297,11 @@ export function SyllabusManager({ subjects }: { subjects: SubjectAgg[] }) {
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
-                <div className="border-t border-border px-2 pb-2">
+                <div className="border-t border-border/70 px-2 pb-2">
                   {unit.topics.length === 0 && (
                     <p className="px-3 py-3 text-center text-xs text-muted-foreground">No topics yet — add the first one.</p>
                   )}
-                  {unit.topics.map((t) => (
+                  {topics.map((t) => (
                     <TopicRow
                       key={t.id}
                       topic={t}
@@ -255,7 +312,8 @@ export function SyllabusManager({ subjects }: { subjects: SubjectAgg[] }) {
                   ))}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </CardBody>
       </Card>

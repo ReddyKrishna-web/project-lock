@@ -1,46 +1,25 @@
-# dependencies
-/node_modules
+# Dependencies
+node_modules/
 
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# env files
+# Environment files
 .env
 .env.local
-.env*.local
+.env.*
+!.env.example
 
-# vercel
-.vercel
+# API keys and credentials
+*.pem
+*.key
+service-account*.json
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# Build output
+dist/
+build/
+.next/
 
-# local database
-/data/
-
-# QA artifacts
-/scripts/.shots/
-/scripts/.chrome-profile*/
-
-# Python venv (not part of the JS app)
-/venv/
-
-# logs
+# Logs
 *.log
 
-# IDE
-/.idea/
+# OS files
+.DS_Store
+Thumbs.db

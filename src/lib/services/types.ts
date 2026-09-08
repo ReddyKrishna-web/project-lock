@@ -33,6 +33,8 @@ export type SubjectAgg = {
   progress: number; // 0..100 (weighted)
   totalTopics: number;
   completedTopics: number;
+  /** Remaining study hours for unfinished topics (difficulty-weighted). */
+  estimatedHours: number;
   units: UnitAgg[];
   weakTopics: { id: string; name: string; difficulty: number }[];
   exam: { id: string; name: string; date: string; daysLeft: number } | null;

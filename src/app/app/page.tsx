@@ -1,12 +1,12 @@
 import Link from "next/link";
 import {
-  ArrowRight,
   BookOpen,
   CalendarClock,
   CheckCircle2,
   Flame,
   GraduationCap,
   ListTodo,
+  Play,
   Sparkles,
   Target,
   TrendingUp,
@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/skeleton";
 import { PlanItemRow } from "@/components/app/plan-item-row";
 import { WeeklyBarChart } from "@/components/app/charts";
+import { QuoteOfTheDay } from "@/components/app/quote-of-the-day";
 
 export const dynamic = "force-dynamic";
 
@@ -57,14 +58,14 @@ export default async function DashboardPage() {
   const insight = analytics.insights[0];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="rise-3d space-y-6">
+      {/* Header — plain ink greeting, no emoji */}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight sm:text-[28px]">
-            {greeting}, {firstName} <span aria-hidden>👋</span>
+            {greeting}, {firstName}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">Let&apos;s make today count.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Here is what today needs from you.</p>
         </div>
         <div className="flex items-center gap-2.5">
           <Badge tone={data.streak > 0 ? "warning" : "neutral"} className="gap-2 px-3 py-1.5">
@@ -73,25 +74,34 @@ export default async function DashboardPage() {
           <Badge tone="primary" className="gap-2 px-3 py-1.5">
             <TrendingUp className="h-3.5 w-3.5" /> {formatMinutes(analytics.week.at(-1)?.minutes ?? 0)} this week
           </Badge>
+          <Link
+            href={nextUp ? `/app/focus?planItemId=${nextUp.id}` : "/app/today"}
+            className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-raise-sm transition-transform hover:-translate-y-0.5"
+          >
+            <Play className="h-4 w-4" />
+            {nextUp ? "Start next session" : "Open today's plan"}
+          </Link>
         </div>
       </div>
 
-      {/* Hero row */}
+      {/* Quote of the day — calm moment above the plan; self-contained */}
+      <QuoteOfTheDay />
+
+      {/* Hero row — margin dial plus timetable ledger */}
       <div className="grid gap-4 lg:grid-cols-3">
-        {/* Progress ring */}
-        <Card className="relative overflow-hidden">
-          <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-primary-soft blur-2xl" aria-hidden />
+        {/* Progress ring — extruded dial */}
+        <Card className="neo-extrude bevel-top relative overflow-hidden">
           <CardBody className="relative flex flex-col items-center justify-center py-7">
             <Ring value={pct} size={150} stroke={12} label={`${pct}%`} sublabel="of daily goal" />
-            <p className="mt-4 text-lg font-bold tracking-tight">
+            <p className="mt-4 font-display text-lg font-bold tracking-tight">
               {formatMinutes(doneMin)}
-              <span className="text-sm font-medium text-muted-foreground"> / {formatMinutes(goal)}</span>
+              <span className="font-sans text-sm font-medium text-muted-foreground"> of {formatMinutes(goal)}</span>
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               {todayItems.length === 0
                 ? "No blocks scheduled today"
                 : completedToday.length === todayItems.length
-                  ? "All planned blocks complete 🎉"
+                  ? "All planned blocks complete. Well held."
                   : `${todayItems.length - completedToday.length} block${todayItems.length - completedToday.length === 1 ? "" : "s"} to go`}
             </p>
           </CardBody>
@@ -106,9 +116,9 @@ export default async function DashboardPage() {
             </div>
             <Link
               href="/app/today"
-              className={cn(variantClasses.ghost, sizeClasses.sm, "inline-flex items-center gap-1.5")}
+              className={cn(variantClasses.ghost, sizeClasses.sm, "inline-flex items-center gap-1.5 underline-offset-4 hover:underline")}
             >
-              Full plan <ArrowRight className="h-3.5 w-3.5" />
+              Full plan
             </Link>
           </CardHeader>
           <CardBody className="space-y-2">
@@ -135,7 +145,7 @@ export default async function DashboardPage() {
                 {completedToday.length > 0 && (
                   <div className="flex items-center gap-2 pt-1 text-xs text-muted-foreground">
                     <CheckCircle2 className="h-3.5 w-3.5 text-success" />
-                    {completedToday.length} block{completedToday.length === 1 ? "" : "s"} completed · {missedToday.length > 0 && `${missedToday.length} missed`}
+                    {completedToday.length} block{completedToday.length === 1 ? "" : "s"} completed{missedToday.length > 0 && `, ${missedToday.length} missed`}
                   </div>
                 )}
               </>
@@ -160,9 +170,9 @@ export default async function DashboardPage() {
             {insight ? (
               <div>
                 <p className="text-sm font-semibold">{insight.title}</p>
-                <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">{insight.message}</p>
+                <p className="mt-1.5 max-w-prose text-[13px] leading-relaxed text-muted-foreground">{insight.message}</p>
                 <Link href="/app/chat" className="mt-3 inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary hover:underline">
-                  Ask Pilot for details <ArrowRight className="h-3.5 w-3.5" />
+                  Ask Pilot for details
                 </Link>
               </div>
             ) : (
@@ -180,25 +190,27 @@ export default async function DashboardPage() {
               <ListTodo className="h-4 w-4 text-muted-foreground" /> Deadlines
             </CardTitle>
           </CardHeader>
-          <CardBody className="space-y-2">
+          <CardBody className="pt-1">
             {upcomingTasks.length === 0 ? (
-              <p className="py-4 text-center text-[13px] text-muted-foreground">Nothing due — enjoy the calm.</p>
+              <p className="py-4 text-center text-[13px] text-muted-foreground">Nothing due. Enjoy the calm.</p>
             ) : (
-              upcomingTasks.map((t) => (
-                <div key={t.id} className="flex items-center gap-2.5 rounded-xl border border-border bg-muted/30 px-3 py-2">
-                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: t.subjectColor ?? "var(--color-muted-foreground)" }} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-medium">{t.title}</p>
-                    <p className="text-[11px] text-muted-foreground">{t.subjectName ?? "General"}</p>
+              <div className="space-y-2">
+                {upcomingTasks.map((t) => (
+                  <div key={t.id} className="neo-inset-sm flex items-center gap-2.5 rounded-xl bg-muted/40 px-3 py-2">
+                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: t.subjectColor ?? "var(--color-muted-foreground)" }} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13px] font-medium">{t.title}</p>
+                      <p className="text-[11px] text-muted-foreground">{t.subjectName ?? "General"}</p>
+                    </div>
+                    <Badge tone={(t.daysLeft ?? 99) <= 2 ? "danger" : (t.daysLeft ?? 99) <= 5 ? "warning" : "neutral"}>
+                      {t.daysLeft === 0 ? "Today" : `${t.daysLeft}d`}
+                    </Badge>
                   </div>
-                  <Badge tone={(t.daysLeft ?? 99) <= 2 ? "danger" : (t.daysLeft ?? 99) <= 5 ? "warning" : "neutral"}>
-                    {t.daysLeft === 0 ? "Today" : `${t.daysLeft}d`}
-                  </Badge>
-                </div>
-              ))
+                ))}
+              </div>
             )}
-            <Link href="/app/tasks" className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
-              All tasks <ArrowRight className="h-3 w-3" />
+            <Link href="/app/tasks" className="mt-2 inline-flex text-xs font-semibold text-primary hover:underline">
+              All tasks
             </Link>
           </CardBody>
         </Card>
@@ -210,25 +222,27 @@ export default async function DashboardPage() {
               <GraduationCap className="h-4 w-4 text-muted-foreground" /> Exams
             </CardTitle>
           </CardHeader>
-          <CardBody className="space-y-2">
+          <CardBody className="pt-1">
             {upcomingExams.length === 0 ? (
               <p className="py-4 text-center text-[13px] text-muted-foreground">No exams added yet.</p>
             ) : (
-              upcomingExams.map((e) => (
-                <div key={e.id} className="rounded-xl border border-border bg-muted/30 px-3 py-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="truncate text-[13px] font-medium">{e.examName}</p>
-                    <Badge tone={e.daysLeft <= 7 ? "danger" : "warning"}>{e.daysLeft}d</Badge>
+              <div className="space-y-2">
+                {upcomingExams.map((e) => (
+                  <div key={e.id} className="neo-inset-sm block rounded-xl bg-muted/40 px-3 py-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="truncate text-[13px] font-medium">{e.examName}</p>
+                      <Badge tone={e.daysLeft <= 7 ? "danger" : "warning"}>{e.daysLeft}d</Badge>
+                    </div>
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <Progress value={e.readiness} tone={e.readiness >= 80 ? "success" : e.readiness >= 50 ? "primary" : "warning"} className="flex-1" />
+                      <span className="text-[11px] font-semibold tabular-nums text-muted-foreground">{e.readiness}%</span>
+                    </div>
                   </div>
-                  <div className="mt-1.5 flex items-center gap-2">
-                    <Progress value={e.readiness} tone={e.readiness >= 80 ? "success" : e.readiness >= 50 ? "primary" : "warning"} className="flex-1" />
-                    <span className="text-[11px] font-semibold tabular-nums text-muted-foreground">{e.readiness}%</span>
-                  </div>
-                </div>
-              ))
+                ))}
+              </div>
             )}
-            <Link href="/app/exams" className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
-              Exam readiness <ArrowRight className="h-3 w-3" />
+            <Link href="/app/exams" className="mt-2 inline-flex text-xs font-semibold text-primary hover:underline">
+              Exam readiness
             </Link>
           </CardBody>
         </Card>
@@ -246,7 +260,7 @@ export default async function DashboardPage() {
           <CardBody>
             <WeeklyBarChart data={analytics.week} height={170} />
             <p className="mt-2 text-xs text-muted-foreground">
-              Average {formatMinutes(analytics.weeklyAverageMinutes)}/day · completion rate {analytics.completionRate}%
+              Average {formatMinutes(analytics.weeklyAverageMinutes)} per day, completion rate {analytics.completionRate}%
             </p>
           </CardBody>
         </Card>
@@ -260,11 +274,11 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardBody>
             {weakTopics.length === 0 ? (
-              <p className="py-4 text-center text-[13px] text-muted-foreground">No topics flagged — you&apos;re in great shape.</p>
+              <p className="py-4 text-center text-[13px] text-muted-foreground">No topics flagged. You are in good shape.</p>
             ) : (
               <ul className="space-y-1.5">
                 {weakTopics.map((w) => (
-                  <li key={w.id} className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] hover:bg-muted/60">
+                  <li key={w.id} className="neo-inset-sm flex items-center gap-2.5 rounded-lg bg-muted/30 px-2 py-1.5 text-[13px]">
                     <BookOpen className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                     <span className="font-medium">{w.name}</span>
                     <span className="ml-auto text-xs text-muted-foreground">{w.subject}</span>
@@ -272,8 +286,8 @@ export default async function DashboardPage() {
                 ))}
               </ul>
             )}
-            <Link href="/app/syllabus" className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
-              Open syllabus <ArrowRight className="h-3 w-3" />
+            <Link href="/app/syllabus" className="mt-3 inline-flex text-xs font-semibold text-primary hover:underline">
+              Open syllabus
             </Link>
           </CardBody>
         </Card>

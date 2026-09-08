@@ -1,17 +1,58 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit, Inter_Tight } from "next/font/google";
+import { Zilla_Slab, Inter_Tight, Archivo_Black, Space_Grotesk, JetBrains_Mono, Courier_Prime, Special_Elite } from "next/font/google";
 import { ToastProvider } from "@/components/ui/toaster";
+import { MotionProvider } from "@/components/motion/MotionProvider";
 import "./globals.css";
 
-const outfit = Outfit({
+const zillaSlab = Zilla_Slab({
   subsets: ["latin"],
-  variable: "--font-outfit",
+  weight: ["500", "600", "700"],
+  variable: "--font-zilla",
   display: "swap",
 });
 
 const interTight = Inter_Tight({
   subsets: ["latin"],
   variable: "--font-inter-tight",
+  display: "swap",
+});
+
+// Neo-brutalism display/sans/mono faces (Phase 0 — loaded alongside the
+// existing faces; call sites opt in via font-brutal-* utilities).
+const archivoBlack = Archivo_Black({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-archivo",
+  display: "swap",
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-space",
+  display: "swap",
+});
+
+const jetBrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["500", "700"],
+  variable: "--font-jetbrains",
+  display: "swap",
+});
+
+// Typewriter voice (user request): Special Elite for display/stamps,
+// Courier Prime (readable monospace) for body + functional mono.
+const courierPrime = Courier_Prime({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-courier",
+  display: "swap",
+});
+
+const specialElite = Special_Elite({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-special",
   display: "swap",
 });
 
@@ -26,48 +67,19 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f6f6fb" },
-    { media: "(prefers-color-scheme: dark)", color: "#0c0e15" },
-  ],
+  themeColor: "#ece7dd",
 };
-
-const themeScript = `
-try {
-  var stored = localStorage.getItem('sp-theme');
-  var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  var theme = stored || 'system';
-  var isDark = theme === 'dark' || (theme === 'system' && prefersDark);
-  var root = document.documentElement;
-  if (isDark) root.classList.add('dark');
-  root.style.colorScheme = isDark ? 'dark' : 'light';
-  window.__spTheme = theme;
-  window.__spSetTheme = function (t) {
-    localStorage.setItem('sp-theme', t);
-    var d = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    document.documentElement.classList.toggle('dark', d);
-    document.documentElement.style.colorScheme = d ? 'dark' : 'light';
-    window.__spTheme = t;
-  };
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
-    if ((window.__spTheme || 'system') === 'system') {
-      document.documentElement.classList.toggle('dark', e.matches);
-      document.documentElement.style.colorScheme = e.matches ? 'dark' : 'light';
-    }
-  });
-} catch (e) {}
-`;
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${outfit.variable} ${interTight.variable}`}>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-      </head>
-      <body className={`${outfit.variable} ${interTight.variable} font-sans antialiased`}>
-        <ToastProvider>{children}</ToastProvider>
+    <html lang="en" className={`${zillaSlab.variable} ${interTight.variable} ${archivoBlack.variable} ${spaceGrotesk.variable} ${jetBrainsMono.variable} ${courierPrime.variable} ${specialElite.variable}`}>
+      <head />
+      <body className={`${zillaSlab.variable} ${interTight.variable} ${archivoBlack.variable} ${spaceGrotesk.variable} ${jetBrainsMono.variable} ${courierPrime.variable} ${specialElite.variable} font-sans antialiased`}>
+        <MotionProvider>
+          <ToastProvider>{children}</ToastProvider>
+        </MotionProvider>
       </body>
     </html>
   );

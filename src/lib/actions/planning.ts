@@ -39,14 +39,16 @@ export async function postponePlanItemAction(itemId: string, days = 1) {
 const movePlanSchema = z.object({
   itemId: z.string().min(1),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date"),
+  /** Optional time-of-day placement, minutes from midnight. */
+  startMinutes: z.coerce.number().int().min(0).max(1439).optional(),
 });
 
-/** Drag-and-drop reschedule: move a pending block to a specific day. */
-export async function movePlanItemAction(itemId: string, date: string) {
+/** Drag-and-drop reschedule: move a pending block to a day, optionally at a specific time. */
+export async function movePlanItemAction(itemId: string, date: string, startMinutes?: number) {
   const user = await requireUser();
-  const parsed = movePlanSchema.safeParse({ itemId, date });
+  const parsed = movePlanSchema.safeParse({ itemId, date, startMinutes });
   if (!parsed.success) return { ok: false as const, error: "Invalid move request." };
-  const res = await movePlanItem(user.id, parsed.data.itemId, parsed.data.date);
+  const res = await movePlanItem(user.id, parsed.data.itemId, parsed.data.date, parsed.data.startMinutes);
   revalidatePath("/app", "layout");
   if (!res.ok) return { ok: false as const, error: res.error };
   return { ok: true as const, moved: res.moved };

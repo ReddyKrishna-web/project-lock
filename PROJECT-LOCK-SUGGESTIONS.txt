@@ -588,14 +588,14 @@ UPGRADE OPPORTUNITY: —
 IMPLEMENTATION NOTES: —
 ---------------------
 
-BACKLOG SUMMARY (2026-09-06, after loop iteration 6 — PL-015)
+BACKLOG SUMMARY (2026-09-08 — Study Intelligence Upgrade; PL-026 completed)
   COMPLETED:                PL-001, PL-002, PL-003, PL-004, PL-005,
                             PL-006, PL-007, PL-008, PL-010, PL-011,
-                            PL-012, PL-013, PL-015
+                            PL-012, PL-013, PL-015, PL-023, PL-025, PL-026
   PENDING:                  PL-009 (blocked: needs connection string),
-                            PL-014, PL-016 … PL-022, PL-023, PL-024
+                            PL-014, PL-016 … PL-022, PL-024
   NEXT UP (per priority):   PL-016 (P3, calendar DnD maturity) →
-                            PL-023 (P3) → PL-018 (P3) → PL-019 (P3)
+                            PL-018 (P3) → PL-019 (P3)
   BLOCKED / EXTERNAL INPUT: PL-009 (Postgres URL), PL-014 (channel +
                             provider account), PL-017 (GitHub app)
 =====================================================================
@@ -605,10 +605,12 @@ SUGGESTION ID: PL-023
 TITLE: Semantic (embedding-based) search over uploaded study materials
 CATEGORY: AI / Data
 PRIORITY: P3 — Medium
-CURRENT STATUS: PENDING
-CURRENT IMPLEMENTATION STATE: NOT IMPLEMENTED — materials reach the
-  model as the first 8 excerpts by recency; relevance to the current
-  question is not measured.
+CURRENT STATUS: COMPLETED (2026-09-07, via the Tuning feature)
+CURRENT IMPLEMENTATION STATE: IMPLEMENTED — Tuning knowledge bases chunk
+  PDFs at processing time, embed with provider embeddings when reachable
+  (else a deterministic on-device index, source stored per KB), and rank
+  by cosine similarity scoped to user + subject. Syllabus-materials
+  recency excerpts in chat remain as they were.
 PROBLEM: With many uploads, the model may not see the excerpt that
   actually answers the question.
 PROPOSED IMPROVEMENT: Embed material chunks at upload time and rank by
@@ -620,7 +622,11 @@ SCOPE: extraction service + chat context builder.
 VERIFICATION METHOD: Ask a question answerable only from an older
   upload; assert the correct excerpt is selected.
 UPGRADE OPPORTUNITY: —
-IMPLEMENTATION NOTES: —
+IMPLEMENTATION NOTES: Completed as src/lib/tuning/* (embed/chunk/jobs/
+  patterns/query/retrieve/state) + /app/tuning. Provider embeddings are
+  best-effort with an on-device fallback instead of a hard dependency;
+  per-KB source is never mixed. E2E-verified with a hand-built PDF
+  (retrieval, isolation, flowchart spec). Changelog ENTRY #18.
 ---------------------
 SUGGESTION ID: PL-024
 TITLE: OCR for image uploads (photo-of-textbook path)
@@ -642,3 +648,76 @@ VERIFICATION METHOD: Upload a legible photo; assert extracted text
 UPGRADE OPPORTUNITY: —
 IMPLEMENTATION NOTES: —
 =====================================================================
+SUGGESTION ID: PL-025
+TITLE: Tuning Intelligence Engine (human-like personalized AI decision architecture)
+CATEGORY: AI / Personalization
+PRIORITY: P2 — High
+CURRENT STATUS: COMPLETED (2026-09-08)
+CURRENT IMPLEMENTATION STATE: IMPLEMENTED — src/lib/tuning/intelligence/
+  (types, subject-detection, classify, intent, strategy,
+  visual-decision, subject-map, profile, context-builder, validator,
+  pipeline) wired into askTuningAction; signalsJson on tuningPrefs
+  (migration 0006); learned-preference display + reset in Tuning
+  dashboard; 23 new tests in tests/tuning-intelligence.test.ts.
+PROBLEM: Tuning answered retrieve-then-generate: no subject priority,
+  single-label classification, no intent analysis, no strategy choice,
+  visuals by keyword only, personalization always-on, no uncertainty
+  discipline, no preference learning.
+PROPOSED IMPROVEMENT: Three-layer decision architecture — understand
+  first, retrieve second, personalize third, choose strategy fourth,
+  generate last — per the Tuning Intelligence Engine brief (§1–§23).
+EXPECTED BENEFIT: Answers grounded in the right subject, shaped by
+  real intent, visualized only when useful, personalized only when
+  relevant, honest when thin, improving gradually with user control.
+DEPENDENCIES: PL-023 (completed — RAG foundation reused, not duplicated).
+RISK: Low — additive modules; deterministic composer + retrieval
+  paths unchanged; LLM prompt strictly richer (budgeted context +
+  strategy instruction).
+SCOPE: src/lib/tuning/intelligence/* (new), src/lib/actions/tuning.ts,
+  src/lib/tuning/state.ts, tuning-dashboard.tsx, tuningPrefs column,
+  tests/tuning-intelligence.test.ts.
+VERIFICATION METHOD: 94/94 vitest (23 new, one per §23 criterion);
+  tsc clean; lint 0 errors; build OK; smoke 16/16 incl. /app/tuning.
+UPGRADE OPPORTUNITY: Conversation-aware subject resolution (panel is
+  stateless today — recentQueries plumbed but empty); dedicated worker
+  with PL-009.
+IMPLEMENTATION NOTES: Also fixed as drive-bys: eslint ignore
+  generalized to scripts/.chrome-*/** (new QA profiles re-broke lint
+  with 189 third-party errors, same class as PL-011) and an unused
+  catch binding in assess/summary.ts. Remaining 3 lint warnings are
+  in untracked scratch QA scripts only.
+=====================================================================
+SUGGESTION ID: PL-026
+TITLE: Study Intelligence Upgrade - syllabus/general quiz, AI flashcards, AI mind maps
+CATEGORY: Feature / AI Learning System
+PRIORITY: P2 - High
+CURRENT STATUS: COMPLETED (2026-09-08)
+CURRENT IMPLEMENTATION STATE: IMPLEMENTED - src/lib/study/ (sources,
+  difficulty, scheduling) + src/lib/assess/{quiz,flashcards,mindmaps}
+  generation + src/lib/actions/study.ts + QuizRunner source toggle +
+  /app/flashcards + /app/mindmaps + nav entries + tests/study.test.ts.
+PROBLEM: Quiz demanded pasted material even when the syllabus already
+  held the content; no general quiz; flashcards table existed with no
+  UI; no mind maps; difficulty was stored but barely shaped questions.
+PROPOSED IMPROVEMENT: Unified study intelligence per the brief -
+  shared syllabus retrieval, Syllabus/General sources, real difficulty
+  contracts, teacher-style flashcards with self-assessment, structured
+  SVG mind maps, personalization signals. No new tables.
+EXPECTED BENEFIT: One learning flow (Syllabus -> Pilot analysis ->
+  Quiz/Flashcards/Mind Maps) reusing data the student already entered.
+DEPENDENCIES: assess/quiz grading pipeline (reused unchanged);
+  AI provider key for generation (honest errors without one).
+RISK: Low - additive; quiz check/finish/results paths untouched;
+  StudyMaterialInput kept for Summary Practice.
+SCOPE: src/lib/study/* (new), src/lib/assess/*, src/lib/actions/
+  study.ts (new) + assess.ts (strengths), quiz-runner, flashcards/
+  mindmap studios + pages, app-shell nav, smoke, tests.
+VERIFICATION METHOD: 108/108 vitest (14 new); tsc clean; lint 0
+  errors; build OK; smoke 18/18 incl. new pages.
+UPGRADE OPPORTUNITY: Conversation-scoped study sessions; spaced-
+  repetition due queue surfacing in Today.
+IMPLEMENTATION NOTES: Drive-bys inside this change: set-state-in-
+  effect defaults replaced with render-time derivation (PL-011 rule);
+  sync helpers kept out of "use server" modules (build rule);
+  strongTopicsFromGrading added (strengths need 2+ clean answers -
+  never overinterpret one question).

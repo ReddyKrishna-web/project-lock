@@ -1,8 +1,10 @@
 "use client";
 
 import * as React from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { CheckCircle2, Info, TriangleAlert, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toastItem } from "@/components/motion/variants";
 
 type ToastTone = "success" | "error" | "info";
 type ToastItem = { id: number; tone: ToastTone; title: string; description?: string };
@@ -36,13 +38,19 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         aria-live="polite"
         className="pointer-events-none fixed inset-x-0 bottom-4 z-[70] flex flex-col items-center gap-2 px-4 sm:items-end sm:right-4 sm:bottom-4 sm:inset-x-auto sm:px-0"
       >
-        {items.map((t) => (
-          <div
-            key={t.id}
-            className={cn(
-              "animate-scale-in pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-2xl border border-border bg-card px-4 py-3 pop-shadow",
-            )}
-          >
+        <AnimatePresence>
+          {items.map((t) => (
+            <motion.div
+              key={t.id}
+              variants={toastItem}
+              initial="hidden"
+              animate="show"
+              exit="exit"
+              layout
+              className={cn(
+                "pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-[6px] border-2 border-ink bg-card px-4 py-3 text-card-foreground shadow-brutal",
+              )}
+            >
             {t.tone === "success" && <CheckCircle2 className="mt-0.5 h-4.5 w-4.5 shrink-0 text-success" />}
             {t.tone === "error" && <TriangleAlert className="mt-0.5 h-4.5 w-4.5 shrink-0 text-danger" />}
             {t.tone === "info" && <Info className="mt-0.5 h-4.5 w-4.5 shrink-0 text-info" />}
@@ -57,8 +65,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             >
               <X className="h-3.5 w-3.5" />
             </button>
-          </div>
-        ))}
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
     </ToastCtx.Provider>
   );

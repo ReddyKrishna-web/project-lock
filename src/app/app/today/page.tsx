@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { PlanItemRow } from "@/components/app/plan-item-row";
 import { PlanActions, RescheduleButton } from "@/components/app/plan-actions";
 import { minutesToClock } from "@/lib/dates";
+import { ReadPlanButton } from "@/components/app/read-plan-button";
 
 export const dynamic = "force-dynamic";
 
@@ -90,7 +91,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
                 {formatMinutes(doneMin)} / {formatMinutes(day.plannedMinutes)}
               </span>
             </div>
-            <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
+            <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted shadow-inset-sm">
               <div
                 className="bar-grow h-full rounded-full bg-primary transition-all duration-700"
                 style={{ width: `${pct}%` }}
@@ -98,6 +99,12 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {isToday && <ReadPlanButton items={studyItems.map((item) => ({
+              subject: item.subjectName,
+              title: item.topicName ?? item.title,
+              start: minutesToClock(item.startMinutes),
+              end: minutesToClock(item.startMinutes + item.durationMinutes),
+            }))} />}
             {isToday && pending.length > 0 && (
               <Link
                 href="/app/focus"
@@ -117,7 +124,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
 
       {/* reschedule banner */}
       {missedRecent.length > 0 && (
-        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-warning/30 bg-warning-soft/60 px-5 py-4">
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-warning/25 bg-warning-soft/70 px-5 py-4 shadow-inset-sm">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-warning/15 text-warning">
             <CalendarClock className="h-4.5 w-4.5" />
           </span>

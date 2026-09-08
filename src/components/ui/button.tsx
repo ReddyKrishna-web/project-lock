@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 type Variant =
   | "primary"
   | "secondary"
+  | "ink"
   | "ghost"
   | "outline"
   | "danger"
@@ -17,25 +18,29 @@ type Size = "xs" | "sm" | "md" | "lg" | "icon" | "icon-sm";
 
 const variantClasses: Record<Variant, string> = {
   primary:
-    "bg-primary text-primary-foreground hover:opacity-90 shadow-sm shadow-primary/25 font-medium",
+    "bg-lime text-inkfill border-2 border-ink shadow-brutal brutal-press font-bold",
   secondary:
-    "bg-secondary text-secondary-foreground hover:bg-secondary/70 font-medium",
-  ghost: "text-foreground hover:bg-muted font-medium",
+    "bg-card text-card-foreground border-2 border-ink shadow-brutal brutal-press font-bold",
+  ink: "bg-inkfill text-lime border-2 border-ink shadow-brutal brutal-press font-bold",
+  ghost: "text-foreground hover:bg-muted font-medium transition-colors underline-offset-4 hover:underline",
   outline:
-    "border border-border bg-transparent text-foreground hover:bg-muted font-medium",
-  danger: "bg-danger text-white hover:opacity-90 font-medium",
-  success: "bg-success text-white hover:opacity-90 font-medium",
-  warning: "bg-warning text-white hover:opacity-90 font-medium",
+    "border-2 border-ink bg-card text-foreground shadow-brutal-sm brutal-press hover:bg-muted font-medium",
+  danger:
+    "bg-danger-fill text-inkfill border-2 border-ink shadow-brutal brutal-press font-bold",
+  success:
+    "bg-success text-white border-2 border-ink shadow-brutal brutal-press font-bold",
+  warning:
+    "bg-warning text-white border-2 border-ink shadow-brutal brutal-press font-bold",
   link: "text-primary underline-offset-4 hover:underline font-medium p-0 h-auto",
 };
 
 const sizeClasses: Record<Size, string> = {
-  xs: "h-7 px-2.5 text-xs rounded-lg gap-1.5",
-  sm: "h-8.5 px-3.5 text-sm rounded-xl gap-2",
-  md: "h-10 px-4 text-sm rounded-xl gap-2",
-  lg: "h-11.5 px-5 text-[15px] rounded-2xl gap-2",
-  icon: "h-10 w-10 rounded-xl",
-  "icon-sm": "h-8 w-8 rounded-lg",
+  xs: "h-8 px-2.5 text-xs rounded-[6px] gap-1.5",
+  sm: "h-9 px-4 text-sm rounded-[6px] gap-2",
+  md: "h-11 px-5 text-sm rounded-[6px] gap-2",
+  lg: "h-13 px-7 text-[15px] rounded-[6px] gap-2",
+  icon: "h-11 w-11 rounded-[6px]",
+  "icon-sm": "h-9 w-9 rounded-[6px]",
 };
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -51,11 +56,12 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          "inline-flex select-none items-center justify-center whitespace-nowrap transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 cursor-pointer",
+          "inline-flex select-none items-center justify-center whitespace-nowrap transition-all duration-150 disabled:pointer-events-none disabled:opacity-50 cursor-pointer",
           variantClasses[variant],
           sizeClasses[size],
           className,
         )}
+        aria-busy={loading || undefined}
         disabled={disabled || loading}
         {...props}
       >

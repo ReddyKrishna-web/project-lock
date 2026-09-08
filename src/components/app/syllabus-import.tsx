@@ -2,16 +2,13 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { FileUp, Loader2, Sparkles, TriangleAlert } from "lucide-react";
+import { ClipboardPaste, FileUp, Loader2, Sparkles, TriangleAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, Input, Select } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toaster";
-import {
-  commitSyllabusImportAction,
-  parseSyllabusImportAction,
-} from "@/lib/actions/import";
+import { commitSyllabusImportAction } from "@/lib/actions/import";
 
 type ParsedTopic = { name: string; difficulty: number };
 type ParsedUnit = { name: string; topics: ParsedTopic[] };
@@ -19,6 +16,29 @@ type ParsedSubject = { name: string; units: ParsedUnit[] };
 
 const MAX_UNITS = 12;
 const MAX_TOPICS_PER_UNIT = 40;
+const MAX_FILE_BYTES = 20 * 1024 * 1024;
+
+function newImportId(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** Multipart POST with real upload progress (fetch can't report it). */
+function postParse(form: FormData, onUploadProgress: (pct: number) => void): Promise<Response> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/syllabus/parse");
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onUploadProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () => {
+      resolve(new Response(xhr.responseText, { status: xhr.status, headers: { "Content-Type": "application/json" } }));
+    };
+    xhr.onerror = () => reject(new Error("network"));
+    xhr.send(form);
+  });
+}
 
 /**
  * Syllabus import: upload → parse (AI or built-in engine) → review/edit
@@ -33,7 +53,12 @@ export function SyllabusImport({
   const { toast } = useToast();
   const [open, setOpen] = React.useState(false);
   const [file, setFile] = React.useState<File | null>(null);
+  // Stable per file pick — retries with the same file reuse the same
+  // importId, so the server resumes instead of re-parsing.
+  const [importId, setImportId] = React.useState<string>(() => newImportId());
   const [parsing, setParsing] = React.useState(false);
+  const [uploadPct, setUploadPct] = React.useState<number | null>(null);
+  const [failedStage, setFailedStage] = React.useState<string | null>(null);
   const [preview, setPreview] = React.useState<{
     token: string;
     source: "ai" | "heuristic";
@@ -41,6 +66,8 @@ export function SyllabusImport({
     subjects: ParsedSubject[];
   } | null>(null);
   const [target, setTarget] = React.useState<string>(""); // "" = new subject
+  const [importMode, setImportMode] = React.useState<"merge" | "replace">("merge");
+  const [pastedText, setPastedText] = React.useState("");
   const [newSubjectName, setNewSubjectName] = React.useState("");
   const [committing, setCommitting] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -50,7 +77,12 @@ export function SyllabusImport({
     setPreview(null);
     setParsing(false);
     setCommitting(false);
+    setUploadPct(null);
+    setFailedStage(null);
+    setImportId(newImportId());
     setTarget("");
+    setImportMode("merge");
+    setPastedText("");
     setNewSubjectName("");
     if (inputRef.current) inputRef.current.value = "";
   };
@@ -60,35 +92,69 @@ export function SyllabusImport({
     reset();
   };
 
+  const pickFile = (f: File | null) => {
+    setFile(f);
+    setPreview(null);
+    setFailedStage(null);
+    setUploadPct(null);
+    // New file → new processing lifecycle; same file re-picked keeps
+    // working because the server dedupes by content hash anyway.
+    setImportId(newImportId());
+  };
+
   const parse = async () => {
-    if (!file || parsing) return;
+    if (!file && !pastedText.trim()) return;
+    if (parsing) return;
+    if (!file && pastedText.trim()) {
+      const blob = new Blob([pastedText], { type: "text/plain" });
+      setFile(new File([blob], "pasted-syllabus.txt", { type: "text/plain" }));
+    }
+    const sourceFile = file ?? new File([pastedText], "pasted-syllabus.txt", { type: "text/plain" });
+    if (sourceFile.size > MAX_FILE_BYTES) {
+      toast("error", "File too large", "Syllabus files can be up to 20 MB.");
+      return;
+    }
     setParsing(true);
     setPreview(null);
+    setFailedStage(null);
+    setUploadPct(0);
     try {
-      const buffer = await file.arrayBuffer();
-      let binary = "";
-      const bytes = new Uint8Array(buffer);
-      const chunk = 0x8000;
-      for (let i = 0; i < bytes.length; i += chunk) {
-        binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
-      }
-      const res = await parseSyllabusImportAction({
-        fileName: file.name,
-        mimeType: file.type,
-        dataBase64: btoa(binary),
-        subjectId: target || undefined,
-      });
-      if (!res.ok) {
-        toast("error", "Import failed", res.error);
+      const form = new FormData();
+      form.append("file", sourceFile, sourceFile.name);
+      if (target) form.append("subjectId", target);
+      form.append("importId", importId);
+      const res = await postParse(form, setUploadPct);
+      // Upload bytes are on the server now — remaining stages are parse/structure.
+      setUploadPct(null);
+      const body = (await res.json().catch(() => null)) as {
+        ok: boolean;
+        token?: string;
+        syllabus?: { subjects: ParsedSubject[] };
+        source?: "ai" | "heuristic";
+        warning?: string;
+        stage?: string;
+        error?: string;
+      } | null;
+      if (!res.ok || !body?.ok) {
+        setFailedStage(body?.stage ?? null);
+        const hint =
+          body?.stage === "analysis"
+            ? "Parsing succeeded — retry to re-analyze without re-uploading."
+            : (body?.error ?? "Couldn't read that file. Try a different PDF or paste topics manually.");
+        toast("error", "Import failed", body?.error ?? hint);
         return;
       }
-      setPreview({ token: res.token, source: res.source, warning: res.warning, subjects: res.syllabus.subjects });
-      const first = res.syllabus.subjects[0]?.name ?? "";
+      setPreview({ token: body.token!, source: body.source!, warning: body.warning, subjects: body.syllabus!.subjects });
+      const first = body.syllabus!.subjects[0]?.name ?? "";
       if (!target && !newSubjectName && first) setNewSubjectName(first.slice(0, 80));
+      if (body && (body as { reused?: boolean }).reused) {
+        toast("success", "Already processed", "This exact file was parsed before — showing the stored structure.");
+      }
     } catch {
-      toast("error", "Import failed", "Couldn't read that file. Try a different PDF or paste topics manually.");
+      toast("error", "Import failed", "Connection problem — retry without re-uploading; your file is kept.");
     } finally {
       setParsing(false);
+      setUploadPct(null);
     }
   };
 
@@ -105,6 +171,7 @@ export function SyllabusImport({
         subjectId: target || null,
         newSubjectName: target ? null : newSubjectName.trim(),
         syllabus: { subjects: preview.subjects },
+        mode: importMode,
       });
       if (!res.ok) {
         toast("error", "Import failed", res.error);
@@ -174,20 +241,36 @@ export function SyllabusImport({
         open={open}
         onClose={close}
         title="Import syllabus"
-        description="Upload a PDF, Word, Excel or text file. You'll review everything before it's added."
+        description="Upload or paste a syllabus, review the structure, then merge or replace one subject."
       >
         <div className="space-y-4">
           {/* Step 1: file */}
           {!preview && (
             <div className="space-y-4">
-              <Field label="Syllabus document">
-                <input
-                  ref={inputRef}
-                  type="file"
-                  accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md"
-                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                  className="block w-full cursor-pointer rounded-xl border border-border bg-muted/30 px-3 py-2.5 text-sm file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white"
-                />
+              <Field label="Syllabus document" hint="PDF, Word, Excel, CSV, Markdown or text — up to 20 MB.">
+                <div
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    pickFile(event.dataTransfer.files?.[0] ?? null);
+                  }}
+                  className="rounded-xl border-2 border-dashed border-ink/30 bg-muted/30 p-3 transition-colors hover:border-primary/60 hover:bg-primary-soft/30"
+                >
+                  <input
+                    ref={inputRef}
+                    type="file"
+                    accept=".pdf,.docx,.xls,.xlsx,.csv,.json,.txt,.md,image/*"
+                    onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
+                    className="block w-full cursor-pointer rounded-lg bg-transparent px-1 py-2 text-sm file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-primary-foreground file:shadow-raise-sm"
+                  />
+                  <p className="px-1 text-[11px] text-muted-foreground">Drop a file here or choose one. Images are accepted as an OCR-ready placeholder.</p>
+                </div>
+              </Field>
+              <Field label="Or paste syllabus text" hint="Useful for copied course outlines and notes.">
+                <div className="relative">
+                  <ClipboardPaste className="pointer-events-none absolute right-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                  <textarea value={pastedText} onChange={(e) => { setPastedText(e.target.value); if (e.target.value) setFile(null); }} placeholder="UNIT 1\n1. Introduction\n2. Core concepts" className="min-h-24 w-full rounded-[6px] border-2 border-ink bg-input px-3.5 py-3 pr-10 text-sm outline-none focus:shadow-[4px_4px_0_0_var(--brutal-focus)]" />
+                </div>
               </Field>
               <Field label="Add topics to">
                 <Select value={target} onChange={(e) => setTarget(e.target.value)}>
@@ -208,7 +291,7 @@ export function SyllabusImport({
                 <Button variant="ghost" size="sm" onClick={close} className="cursor-pointer">
                   Cancel
                 </Button>
-                <Button size="sm" disabled={!file || parsing} onClick={parse} className="cursor-pointer">
+                <Button size="sm" disabled={(!file && !pastedText.trim()) || parsing} onClick={parse} className="cursor-pointer">
                   {parsing ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" /> Parsing…
@@ -220,9 +303,35 @@ export function SyllabusImport({
                   )}
                 </Button>
               </div>
+              {target && (
+                <Field label="When topics already exist">
+                  <Select value={importMode} onChange={(e) => setImportMode(e.target.value as "merge" | "replace")}>
+                    <option value="merge">Merge missing units and topics</option>
+                    <option value="replace">Replace this subject's syllabus</option>
+                  </Select>
+                </Field>
+              )}
               {parsing && (
-                <p className="text-center text-xs text-muted-foreground" role="status">
-                  Reading the document and structuring topics — this usually takes a few seconds.
+                <div className="space-y-1.5" role="status" aria-live="polite">
+                  {uploadPct !== null ? (
+                    <>
+                      <div className="h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={uploadPct} aria-valuemin={0} aria-valuemax={100} aria-label="Upload progress">
+                        <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${uploadPct}%` }} />
+                      </div>
+                      <p className="text-center text-xs text-muted-foreground">Uploading… {uploadPct}% (real transfer progress)</p>
+                    </>
+                  ) : (
+                    <p className="flex items-center justify-center gap-2 text-center text-xs text-muted-foreground">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" /> Upload complete — parsing document and structuring topics…
+                    </p>
+                  )}
+                </div>
+              )}
+              {!parsing && failedStage && (
+                <p className="text-center text-xs text-muted-foreground" role="alert">
+                  {failedStage === "analysis"
+                    ? "Parsing succeeded but analysis failed — press Parse document again to retry analysis without re-uploading."
+                    : "Parsing failed — check the file and try again."}
                 </p>
               )}
             </div>
@@ -245,12 +354,12 @@ export function SyllabusImport({
                 </p>
               )}
 
-              <div className="max-h-72 space-y-3 overflow-y-auto rounded-xl border border-border p-3">
+              <div className="max-h-72 space-y-3 overflow-y-auto rounded-xl bg-muted/30 p-3 shadow-inset-sm">
                 {preview.subjects.map((s, si) => (
                   <div key={si} className="space-y-2">
                     <Input value={s.name} onChange={(e) => editSubject(si, e.target.value)} aria-label="Subject name" className="font-semibold" />
                     {s.units.slice(0, MAX_UNITS).map((u, ui) => (
-                      <div key={ui} className="rounded-lg border border-border/60 bg-muted/20 p-2.5">
+                      <div key={ui} className="rounded-lg bg-muted/30 p-2.5">
                         <div className="flex items-center gap-2">
                           <Input value={u.name} onChange={(e) => editUnit(si, ui, e.target.value)} aria-label="Unit name" className="text-[13px]" />
                           <button

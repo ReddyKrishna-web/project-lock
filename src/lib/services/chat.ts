@@ -4,7 +4,9 @@ import {
   chatConversations,
   chatMessages,
   exams,
+  flashcards as flashcardsTable,
   materials as materialsTable,
+  mindmaps as mindmapsTable,
   planItems,
   studySessions,
   subjects as subjectsTable,
@@ -277,6 +279,55 @@ export async function buildChatContext(userId: string): Promise<ChatContext> {
     excerpt: (m.excerpt ?? "").slice(0, 900),
   }));
 
+  // The student's own study aids — flashcards + mind maps Pilot can
+  // reference by name. Capped excerpts, owned data only.
+  const cardRows = await db
+    .select({
+      front: flashcardsTable.front,
+      back: flashcardsTable.back,
+      subjectName: subjectsTable.name,
+    })
+    .from(flashcardsTable)
+    .leftJoin(subjectsTable, eq(flashcardsTable.subjectId, subjectsTable.id))
+    .where(eq(flashcardsTable.userId, userId))
+    .orderBy(desc(flashcardsTable.createdAt))
+    .limit(15)
+    .all();
+  const mapRows = await db
+    .select({ mapJson: mindmapsTable.mapJson })
+    .from(mindmapsTable)
+    .where(eq(mindmapsTable.userId, userId))
+    .orderBy(desc(mindmapsTable.createdAt))
+    .limit(5)
+    .all();
+  const studyAids = {
+    flashcards: cardRows.map((c) => ({
+      front: c.front.slice(0, 200),
+      back: c.back.slice(0, 300),
+      subjectName: c.subjectName ?? null,
+    })),
+    mindmaps: mapRows.flatMap((r) => {
+      try {
+        const parsed = JSON.parse(r.mapJson) as {
+          central?: string;
+          branches?: { label?: string; children?: { label?: string }[] }[];
+        };
+        if (!parsed.central || !Array.isArray(parsed.branches)) return [];
+        return [
+          {
+            title: String(parsed.central).slice(0, 80),
+            branches: parsed.branches.slice(0, 6).map((b) => ({
+              label: String(b.label ?? "").slice(0, 60),
+              children: (b.children ?? []).slice(0, 5).map((k) => String(k.label ?? "").slice(0, 60)),
+            })),
+          },
+        ];
+      } catch {
+        return [];
+      }
+    }),
+  };
+
   return {
     user: { name: data.user.name },
     availability: {
@@ -296,14 +347,17 @@ export async function buildChatContext(userId: string): Promise<ChatContext> {
     notStartedNearExam,
     syllabusTopics: syllabusTopics.slice(0, 200),
     materials: materialCtx,
+    studyAids,
     exams: examsAgg,
     upcomingDeadlines,
     missedThisWeek: missedCount ?? 0,
   };
 }
 
-export async function chatHistoryForView(conversationId: string) {
-  const rows = await recentMessages(conversationId, 60);
+/** The student's study aids as model context — referenceable, never dumped whole. */
+export { buildStudyAids } from "@/lib/study/study-aids";
+
+export async function chatHistoryForView(conversationId: string) {  const rows = await recentMessages(conversationId, 60);
   return rows.map((m) => ({
     id: m.id,
     role: m.role,

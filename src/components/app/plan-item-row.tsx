@@ -34,7 +34,7 @@ export function PlanItemRow({
   if (item.kind === "break") {
     return (
       <div className="flex items-center gap-3 rounded-xl px-2 py-1.5 text-muted-foreground">
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-dashed border-border">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-dashed border-border bg-muted/40">
           <Clock className="h-3.5 w-3.5" />
         </div>
         <p className="text-[13px] italic">{item.title}</p>
@@ -62,7 +62,7 @@ export function PlanItemRow({
   const actionBtn = (() => {
     if (done) {
       return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-success-soft px-2.5 py-1 text-xs font-semibold text-success">
+        <span className="inline-flex items-center gap-1 rounded-full bg-success-soft px-2.5 py-1 text-xs font-semibold text-success shadow-inset-sm">
           <Check className="h-3.5 w-3.5" /> Done
         </span>
       );
@@ -87,9 +87,9 @@ export function PlanItemRow({
   return (
     <div
       className={cn(
-        "group relative flex items-center gap-3 rounded-2xl border border-border bg-card px-3.5 py-3 transition-all",
+        "group relative flex items-center gap-3 rounded-2xl bg-card px-3.5 py-3 neo-raise-sm transition-all duration-200 hover:shadow-raise",
         done && "opacity-70",
-        highlightNext && !done && !missed && "border-primary/40 bg-primary-soft/40 shadow-sm",
+        highlightNext && !done && !missed && "bg-primary-soft/60 ring-1 ring-inset ring-primary/25",
       )}
     >
       {/* left time rail */}
@@ -131,7 +131,7 @@ export function PlanItemRow({
       {actionBtn}
 
       {actions && !done && !missed && !skipped && (
-        <div className="flex shrink-0 items-center gap-1 opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100">
+        <div className="flex shrink-0 items-center gap-0.5 rounded-xl bg-muted/50 p-0.5 opacity-100 shadow-inset-sm transition-opacity lg:opacity-0 lg:group-hover:opacity-100">
           <Button
             size="icon-sm"
             variant="ghost"
@@ -188,7 +188,7 @@ export function PlanItemRow({
 
 export function PlanItemMini({ item }: { item: PlanItemAgg }) {
   return (
-    <div className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-2.5">
+    <div className="flex items-center gap-2.5 rounded-xl bg-card px-3 py-2.5 neo-raise-sm">
       <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: item.subjectColor ?? "var(--color-muted-foreground)" }} />
       <div className="min-w-0 flex-1">
         <p className="truncate text-[13px] font-semibold">{item.topicName ?? item.title}</p>

@@ -1,14 +1,15 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { eq, or } from "drizzle-orm";
+import { and, eq, lte, or } from "drizzle-orm";
 import { z } from "zod";
 import { headers } from "next/headers";
 import { db, uid } from "@/lib/db";
-import { profiles, settings, users } from "@/lib/db/schema";
+import { profiles, sessions, settings, users } from "@/lib/db/schema";
 import { hashPassword, verifyPassword } from "./password";
 import { createSession, destroySession, getSessionUser } from "./session";
 import { rateLimit } from "@/lib/security/rate-limit";
+import { logSecurityEvent } from "@/lib/security/events";
 import { clientIpFromHeaders, retryMinutes } from "@/lib/security/request-key";
 import { closeActiveSession } from "@/lib/services/chat";
 
@@ -33,12 +34,14 @@ async function authRateLimit(
   if (kind === "login") {
     const perEmail = rateLimit(`login:e:${email.toLowerCase()}`, LOGIN_EMAIL_LIMIT);
     if (!perEmail.allowed) {
+      logSecurityEvent({ type: "login_rate_limited", ip, detail: "per-account" });
       return {
         error: `Too many sign-in attempts for this account. Try again in ${retryMinutes(perEmail.retryAfterMs)} minute(s).`,
       };
     }
     const perIp = rateLimit(`login:ip:${ip}`, LOGIN_IP_LIMIT);
     if (!perIp.allowed) {
+      logSecurityEvent({ type: "login_rate_limited", ip, detail: "per-network" });
       return {
         error: `Too many sign-in attempts from this network. Try again in ${retryMinutes(perIp.retryAfterMs)} minute(s).`,
       };
@@ -48,11 +51,25 @@ async function authRateLimit(
 
   const perIp = rateLimit(`signup:ip:${ip}`, SIGNUP_IP_LIMIT);
   if (!perIp.allowed) {
+    logSecurityEvent({ type: "signup_rate_limited", ip });
     return {
       error: `Too many accounts created from this network. Try again in ${retryMinutes(perIp.retryAfterMs)} minute(s).`,
     };
   }
   return undefined;
+}
+
+/** Remove this user's expired sessions (bounded rotation hygiene). */
+async function purgeExpiredSessions(userId: string): Promise<void> {
+  try {
+    const gone = await db
+      .delete(sessions)
+      .where(and(eq(sessions.userId, userId), lte(sessions.expiresAt, new Date().toISOString())))
+      .run();
+    void gone;
+  } catch {
+    /* cleanup is best-effort; login must never fail on it */
+  }
 }
 
 const credentialsSchema = z.object({
@@ -120,10 +137,13 @@ export async function loginAction(_prev: AuthState, formData: FormData): Promise
     .all();
 
   if (!row.length || !row[0].passwordHash || !verifyPassword(password, row[0].passwordHash)) {
+    logSecurityEvent({ type: "login_failure", ip: clientIpFromHeaders(await headers()) });
     return { error: "Incorrect email or password." };
   }
 
+  await purgeExpiredSessions(row[0].id);
   await createSession(row[0].id);
+  logSecurityEvent({ type: "login_success", userId: row[0].id });
   redirect("/app");
 }
 

@@ -3,16 +3,20 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion } from "motion/react";
 import {
   BarChart3,
   Bell,
   BookOpen,
   CalendarDays,
   Flame,
+  GitFork,
   GraduationCap,
+  Layers,
   LayoutDashboard,
   ListTodo,
   MessageSquareText,
+  MoreHorizontal,
   Rocket,
   Settings as SettingsIcon,
   Sparkles,
@@ -20,10 +24,14 @@ import {
   Timer,
   Trophy,
   LogOut,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { fast } from "@/components/motion/transitions";
+import { PageEnter } from "@/components/motion/PageEnter";
+import { Go1Provider } from "@/components/voice/Go1Provider";
+import { Go1Dock } from "@/components/voice/Go1Dock";
 import { Avatar } from "@/components/ui/avatar";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { markNotificationsReadAction } from "@/lib/actions/settings";
 import { logoutAction } from "@/lib/auth/actions";
 import { format } from "date-fns";
@@ -43,6 +51,9 @@ const MAIN_NAV = [
 const TOOLS_NAV = [
   { href: "/app/focus", label: "Focus", icon: Timer },
   { href: "/app/chat", label: "Pilot", icon: MessageSquareText },
+  { href: "/app/community", label: "Community", icon: Users },
+  { href: "/app/flashcards", label: "Flashcards", icon: Layers },
+  { href: "/app/mindmaps", label: "Mind Maps", icon: GitFork },
   { href: "/app/progress", label: "Progress", icon: BarChart3 },
   { href: "/app/achievements", label: "Achievements", icon: Trophy },
 ];
@@ -55,6 +66,18 @@ const BOTTOM_NAV = [
   { href: "/app/progress", label: "Progress", icon: BarChart3 },
 ];
 
+const MORE_NAV = [
+  { href: "/app/exams", label: "Exams", icon: GraduationCap },
+  { href: "/app/tasks", label: "Tasks", icon: ListTodo },
+  { href: "/app/calendar", label: "Calendar", icon: CalendarDays },
+  { href: "/app/focus", label: "Focus", icon: Timer },
+  { href: "/app/community", label: "Community", icon: Users },
+  { href: "/app/flashcards", label: "Flashcards", icon: Layers },
+  { href: "/app/mindmaps", label: "Mind Maps", icon: GitFork },
+  { href: "/app/achievements", label: "Achievements", icon: Trophy },
+  { href: "/app/settings", label: "Settings", icon: SettingsIcon },
+];
+
 const PAGE_TITLES: Record<string, string> = {
   "/app": "Dashboard",
   "/app/today": "Today's Plan",
@@ -65,6 +88,9 @@ const PAGE_TITLES: Record<string, string> = {
   "/app/calendar": "Calendar",
   "/app/focus": "Focus Mode",
   "/app/chat": "Pilot · AI Study Assistant",
+  "/app/community": "Learning Community",
+  "/app/flashcards": "Flashcards",
+  "/app/mindmaps": "Mind Maps",
   "/app/progress": "Progress & Analytics",
   "/app/achievements": "Achievements",
   "/app/settings": "Settings",
@@ -73,12 +99,10 @@ const PAGE_TITLES: Record<string, string> = {
 function Brand() {
   return (
     <Link href="/app" className="flex items-center gap-2.5 px-1">
-      <span className="flex h-8.5 w-8.5 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-primary/25">
+      <span className="flex h-8.5 w-8.5 items-center justify-center rounded-xl bg-primary text-primary-foreground">
         <Rocket className="h-4.5 w-4.5" />
       </span>
-      <span className="text-[15px] font-bold tracking-tight">
-        Study<span className="text-gradient">Pilot</span>
-      </span>
+      <span className="text-[15px] font-bold tracking-tight">StudyPilot</span>
     </Link>
   );
 }
@@ -88,20 +112,28 @@ function NavLink({ item, onNavigate }: { item: (typeof MAIN_NAV)[number]; onNavi
   const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
   const Icon = item.icon;
   return (
-    <Link
-      href={item.href}
-      onClick={onNavigate}
-      aria-current={active ? "page" : undefined}
-      className={cn(
-        "group flex items-center gap-3 rounded-xl px-3 py-2 text-[13.5px] font-medium transition-all",
-        active
-          ? "bg-primary-soft text-primary"
-          : "text-muted-foreground hover:bg-muted hover:text-foreground",
-      )}
+          <Link
+            href={item.href}
+            onClick={onNavigate}
+            aria-current={active ? "page" : undefined}
+            className={cn(
+              "group relative flex items-center gap-3 rounded-[6px] border-2 px-3 py-2 text-[13.5px] font-medium transition-colors duration-150",
+              active
+                ? "border-ink bg-lime font-bold text-inkfill shadow-brutal-sm"
+                : "border-transparent text-muted-foreground hover:border-ink hover:bg-muted/50 hover:text-foreground",
+            )}
     >
-      <Icon className={cn("h-4.5 w-4.5 shrink-0", active ? "text-primary" : "text-muted-foreground group-hover:text-foreground")} />
-      {item.label}
-      {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />}
+      {active && (
+        <motion.span
+          layoutId="app-nav-active"
+          transition={fast}
+          className="absolute inset-0 rounded-[4px]"
+          aria-hidden
+        />
+      )}
+      <Icon className={cn("relative h-4.5 w-4.5 shrink-0", active ? "text-inkfill" : "text-muted-foreground group-hover:text-foreground")} />
+      <span className="relative">{item.label}</span>
+      {active && <span className="relative ml-auto h-1.5 w-1.5 rounded-full bg-inkfill" aria-hidden />}
     </Link>
   );
 }
@@ -122,6 +154,7 @@ export function AppShell({
   const [notifOpen, setNotifOpen] = React.useState(false);
   const [notifList, setNotifList] = React.useState(unread);
   const [menuOpen, setMenuOpen] = React.useState(false);
+  const [moreOpen, setMoreOpen] = React.useState(false);
 
   const openNotifs = async () => {
     setNotifOpen((v) => !v);
@@ -137,18 +170,19 @@ export function AppShell({
   })();
 
   return (
-    <div className="min-h-dvh bg-background text-foreground">
-      {/* ── Desktop sidebar ─────────────────────────────── */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-border bg-card/60 backdrop-blur-xl lg:flex">
+    <Go1Provider>
+    <div className="app-shell min-h-dvh text-foreground">
+      {/* ── Desktop sidebar: quiet raised rail ────────────── */}
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-border bg-card lg:flex">
         <div className="px-4 pb-2 pt-5">
           <Brand />
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4" aria-label="Main navigation">
-          <p className="px-3 pb-1.5 pt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">Plan</p>
+          <p className="px-3 pb-1.5 pt-2 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground/70">Plan</p>
           {MAIN_NAV.map((item) => (
             <NavLink key={item.href} item={item} />
           ))}
-          <p className="px-3 pb-1.5 pt-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">Focus & Grow</p>
+          <p className="px-3 pb-1.5 pt-4 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground/70">Focus and grow</p>
           {TOOLS_NAV.map((item) => (
             <NavLink key={item.href} item={item} />
           ))}
@@ -156,7 +190,12 @@ export function AppShell({
         <div className="border-t border-border p-3">
           <Link
             href="/app/settings"
-            className="flex items-center gap-3 rounded-xl px-3 py-2 text-[13.5px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className={cn(
+              "flex items-center gap-3 rounded-xl px-3 py-2 text-[13.5px] font-medium transition-all duration-150",
+              pathname.startsWith("/app/settings")
+                ? "border-l-2 border-primary bg-primary-soft text-foreground"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+            )}
           >
             <SettingsIcon className="h-4.5 w-4.5" />
             Settings
@@ -165,10 +204,10 @@ export function AppShell({
       </aside>
 
       {/* ── Top bar ─────────────────────────────────────── */}
-      <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-3 border-b border-border glass px-4 lg:pl-[260px] lg:pr-6">
+      <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-border bg-background/95 px-4 backdrop-blur-sm lg:pl-[260px] lg:pr-6">
         <div className="flex items-center gap-3">
           <Link href="/app" className="lg:hidden">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <Rocket className="h-4 w-4" />
             </span>
           </Link>
@@ -184,14 +223,12 @@ export function AppShell({
             {streak} day{streak === 1 ? "" : "s"}
           </span>
 
-          <ThemeToggle compact />
-
           {/* Notifications */}
           <div className="relative">
             <button
               onClick={openNotifs}
               aria-label={`Notifications${notifList.length ? ` (${notifList.length} unread)` : ""}`}
-              className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
+              className="relative flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground shadow-none tactile cursor-pointer hover:text-foreground"
             >
               <Bell className="h-4 w-4" />
               {notifList.length > 0 && (
@@ -203,21 +240,21 @@ export function AppShell({
             {notifOpen && (
               <>
                 <div className="fixed inset-0 z-30" onClick={() => setNotifOpen(false)} aria-hidden />
-                <div className="absolute right-0 z-40 mt-2 w-80 animate-scale-in rounded-2xl border border-border bg-card pop-shadow">
-                  <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                <div className="neo-float absolute right-0 z-40 mt-2 w-80 animate-scale-in rounded-2xl border border-border/60 bg-elevated">
+                  <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
                     <p className="text-sm font-semibold">Notifications</p>
                     <button onClick={() => setNotifOpen(false)} className="text-xs text-muted-foreground hover:text-foreground cursor-pointer">
                       Close
                     </button>
                   </div>
                   <div className="max-h-80 overflow-y-auto p-2">
-                    {unread.length === 0 ? (
+                    {notifList.length === 0 ? (
                       <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-                        You&apos;re all caught up 🎉
+                        You are all caught up. Nothing needs you right now.
                       </p>
                     ) : (
-                      unread.map((n) => (
-                        <div key={n.id} className="rounded-xl px-3 py-2.5 transition-colors hover:bg-muted">
+                      notifList.map((n) => (
+                        <div key={n.id} className="rounded-xl px-3 py-2.5 transition-colors hover:bg-muted/50">
                           <p className="text-[13px] font-semibold leading-snug">{n.title}</p>
                           {n.body && <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{n.body}</p>}
                         </div>
@@ -241,15 +278,15 @@ export function AppShell({
             {menuOpen && (
               <>
                 <div className="fixed inset-0 z-30" onClick={() => setMenuOpen(false)} aria-hidden />
-                <div className="absolute right-0 z-40 mt-2 w-56 animate-scale-in rounded-2xl border border-border bg-card pop-shadow p-2">
-                  <div className="border-b border-border px-3 pb-2.5 pt-1.5">
+                <div className="neo-float absolute right-0 z-40 mt-2 w-56 animate-scale-in rounded-xl border border-border bg-elevated p-2">
+                  <div className="border-b border-border/70 px-3 pb-2.5 pt-1.5">
                     <p className="truncate text-sm font-semibold">{user.name}</p>
                     <p className="truncate text-xs text-muted-foreground">{user.email}</p>
                   </div>
                   <Link
                     href="/app/settings"
                     onClick={() => setMenuOpen(false)}
-                    className="mt-1 flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                    className="mt-1 flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                   >
                     <SettingsIcon className="h-4 w-4" /> Settings
                   </Link>
@@ -273,24 +310,50 @@ export function AppShell({
       </header>
 
       {/* ── Page content ────────────────────────────────── */}
-      <main className="px-4 pb-28 pt-6 sm:px-6 lg:pb-10 lg:pl-[264px] lg:pr-8">
-        <div key={pathname} className="mx-auto max-w-6xl animate-fade-in">
+      <main className="px-4 pb-32 pt-6 sm:px-6 lg:pb-10 lg:pl-[264px] lg:pr-8">
+        <PageEnter key={pathname}>
+          <div className="mx-auto max-w-6xl">
           <div className="mb-6 sm:hidden">
             <p className="text-lg font-bold tracking-tight">{title}</p>
             <p className="text-xs text-muted-foreground">
-              {timeGreeting}, {user.name.split(" ")[0]} · {format(new Date(), "EEEE, MMMM d")}
+              {timeGreeting}, {user.name.split(" ")[0]}. {format(new Date(), "EEEE, MMMM d")}
             </p>
           </div>
           {children}
-        </div>
+          </div>
+        </PageEnter>
       </main>
 
-      {/* ── Mobile bottom nav ───────────────────────────── */}
+      {/* ── Mobile bottom nav: floating soft dock ───────── */}
       <nav
         aria-label="Mobile navigation"
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-border glass pb-[env(safe-area-inset-bottom)] lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)] lg:hidden"
       >
-        <div className="mx-auto flex max-w-lg items-stretch justify-between px-2 py-1.5">
+        {moreOpen && (
+          <div className="absolute bottom-full left-3 right-3 mb-2 rounded-xl border border-border bg-elevated p-2 shadow-pop">
+            <div className="grid grid-cols-2 gap-1">
+              {MORE_NAV.map((item) => {
+                const Icon = item.icon;
+                const active = pathname.startsWith(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMoreOpen(false)}
+                    className={cn(
+                      "flex items-center gap-2 rounded-lg px-3 py-2.5 text-xs font-semibold",
+                      active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        <div className="mx-auto flex max-w-lg items-stretch justify-between rounded-xl border border-border bg-card px-2 py-1.5 shadow-pop">
           {BOTTOM_NAV.map((item) => {
             const Icon = item.icon;
             const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
@@ -300,18 +363,37 @@ export function AppShell({
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex min-w-14 flex-col items-center gap-0.5 rounded-xl px-2 py-1.5 text-[10px] font-medium transition-colors",
-                  active ? "text-primary" : "text-muted-foreground",
+                  "flex min-w-14 flex-col items-center gap-0.5 rounded-xl px-2 py-1.5 text-[10px] font-medium transition-all duration-150",
+                  active ? "neo-inset-sm bg-muted/60 text-primary" : "text-muted-foreground",
                 )}
               >
-                <Icon className={cn("h-5 w-5", active && "drop-shadow-[0_2px_6px_rgba(87,83,212,0.45)]")} />
+                <Icon className={cn("h-5 w-5", active ? "text-primary" : "")} />
                 {item.label}
               </Link>
             );
           })}
+          <button
+            type="button"
+            aria-expanded={moreOpen}
+            aria-haspopup="menu"
+            onClick={() => setMoreOpen((v) => !v)}
+            className={cn(
+              "flex min-w-14 flex-col items-center gap-0.5 rounded-lg px-2 py-1.5 text-[10px] font-medium transition-all duration-150",
+              moreOpen || MORE_NAV.some((item) => pathname.startsWith(item.href))
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+          >
+            <MoreHorizontal className="h-5 w-5" />
+            More
+          </button>
         </div>
       </nav>
+
+      {/* ── G-o1 voice layer (OFF by default; overlay only, never blocks UI) ── */}
+      <Go1Dock />
     </div>
+    </Go1Provider>
   );
 }
 

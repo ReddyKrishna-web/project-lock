@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="project-lock" type="Application" factoryName="Application">
+    <option name="ALTERNATIVE_JRE_PATH" value="Android API 37.0, extension level 22 Platform" />
+    <module name="Project-lock" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

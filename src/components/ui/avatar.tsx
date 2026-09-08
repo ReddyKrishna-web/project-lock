@@ -1,9 +1,9 @@
 import { cn } from "@/lib/utils";
 
 const GRADIENTS = [
-  "from-[#0b57d0] to-[#083aa0]",
-  "from-[#2f6fd6] to-[#0b57d0]",
-  "from-[#083aa0] to-[#2f4fa0]",
+  "from-[#1e6e3c] to-[#115231]",
+  "from-[#2c8a4f] to-[#1e6e3c]",
+  "from-[#4f9d6d] to-[#2c8a4f]",
   "from-emerald-500 to-teal-500",
   "from-amber-500 to-orange-500",
   "from-rose-500 to-pink-500",
@@ -39,7 +39,7 @@ export function Avatar({
     <span
       aria-hidden
       className={cn(
-        "inline-flex shrink-0 select-none items-center justify-center rounded-full bg-gradient-to-br font-semibold text-white",
+        "inline-flex shrink-0 select-none items-center justify-center rounded-full bg-gradient-to-br font-semibold text-white shadow-[0_1px_2px_rgba(92,80,62,0.22),0_3px_8px_-2px_rgba(92,80,62,0.28)] ring-1 ring-black/5",
         GRADIENTS[hash % GRADIENTS.length],
         sizes[size],
         className,

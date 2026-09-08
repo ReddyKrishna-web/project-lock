@@ -76,7 +76,7 @@ export default async function ProgressPage() {
               return (
                 <div
                   key={ins.id}
-                  className="rounded-2xl border border-border bg-muted/30 p-4"
+                  className="rounded-2xl bg-muted/40 p-4 shadow-inset-sm"
                 >
                   <p className="flex items-center gap-2 text-sm font-semibold">
                     <Icon

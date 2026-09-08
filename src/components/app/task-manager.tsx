@@ -162,8 +162,8 @@ export function TaskManager({ tasks, subjects }: { tasks: TaskAgg[]; subjects: {
               aria-selected={filter === f}
               onClick={() => setFilter(f)}
               className={cn(
-                "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer",
-                filter === f ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground",
+                "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer",
+                filter === f ? "bg-primary text-primary-foreground shadow-raise-sm" : "bg-muted/70 text-muted-foreground shadow-inset-sm hover:text-foreground",
               )}
             >
               {f === "all" ? "All" : f.replace("_", " ")} · {counts[f]}
@@ -203,8 +203,8 @@ export function TaskManager({ tasks, subjects }: { tasks: TaskAgg[]; subjects: {
                     onClick={() => toggle(t)}
                     aria-label={done ? "Reopen task" : "Mark task complete"}
                     className={cn(
-                      "flex h-5.5 w-5.5 shrink-0 items-center justify-center rounded-full border-2 transition-all cursor-pointer",
-                      done ? "border-success bg-success text-white" : "border-muted-foreground/40 hover:border-primary",
+                      "flex h-5.5 w-5.5 shrink-0 items-center justify-center rounded-full transition-all cursor-pointer",
+                      done ? "bg-success text-white shadow-raise-sm" : "bg-muted shadow-inset-sm hover:shadow-inset",
                     )}
                   >
                     {done && <Check className="h-3 w-3" />}

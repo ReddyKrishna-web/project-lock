@@ -16,9 +16,38 @@ const eslintConfig = defineConfig([
     // thousands of minified third-party extension files), runtime data.
     "venv/**",
     "data/**",
-    "scripts/.chrome-profile*/**",
+    "scripts/.chrome-*/**",
     "scripts/.shots/**",
   ]),
+  // Neo-brutalism migration guard (Phase 0): soft depth must not sneak back
+  // into app surfaces. Warn (not error) while pre-existing call sites in
+  // Phase 2–4 files still migrate. Landing (src/app/page.tsx) is exempt
+  // until Phase 4. `shadow-brutal-*` does NOT match (no sm/md/lg right
+  // after `shadow-`).
+  {
+    files: [
+      "src/app/app/**/*.{ts,tsx}",
+      "src/components/ui/**/*.{ts,tsx}",
+      "src/components/app/**/*.{ts,tsx}",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "warn",
+        {
+          selector:
+            "Literal[value=/shadow-(sm|md|lg|xl|2xl)|backdrop-blur|bg-gradient-/]",
+          message:
+            "Soft-UI depth is banned in app surfaces — use shadow-brutal-sm|brutal|brutal-md|brutal-lg, flat fills, no blur (neo-brutalism Phase 0+).",
+        },
+        {
+          selector:
+            "TemplateElement[value.raw=/shadow-(sm|md|lg|xl|2xl)|backdrop-blur|bg-gradient-/]",
+          message:
+            "Soft-UI depth is banned in app surfaces — use shadow-brutal-sm|brutal|brutal-md|brutal-lg, flat fills, no blur (neo-brutalism Phase 0+).",
+        },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;

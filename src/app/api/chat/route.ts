@@ -6,6 +6,8 @@ import { getAiProvider } from "@/lib/ai/provider";
 import { llmChatParams } from "@/lib/ai/router";
 import type { AiReply } from "@/lib/ai/types";
 import { rateLimit } from "@/lib/security/rate-limit";
+import { isSameOriginRequest } from "@/lib/security/origin";
+import { logSecurityEvent } from "@/lib/security/events";
 import { sanitizeUserText } from "@/lib/security/guard";
 import {
   buildChatContext,
@@ -28,6 +30,13 @@ function sse(event: string, data: unknown): string {
 }
 
 export async function POST(req: NextRequest) {
+  if (!isSameOriginRequest(req)) {
+    logSecurityEvent({ type: "csrf_blocked", detail: "POST /api/chat" });
+    return new Response(JSON.stringify({ error: "Cross-origin requests are not allowed." }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
   const user = await currentUser();
   if (!user) {
     return new Response(JSON.stringify({ error: "Not signed in" }), {
@@ -56,6 +65,7 @@ export async function POST(req: NextRequest) {
 
   const rl = rateLimit(`chat:${user.id}`, CHAT_LIMIT);
   if (!rl.allowed) {
+    logSecurityEvent({ type: "chat_rate_limited", userId: user.id });
     const secs = Math.max(1, Math.ceil(rl.retryAfterMs / 1000));
     return new Response(
       JSON.stringify({ error: `You're sending messages too quickly — take a breath and try again in ${secs}s.` }),

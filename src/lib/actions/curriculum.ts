@@ -66,7 +66,9 @@ export async function deleteSubjectAction(id: string) {
 /* ── Units & topics ──────────────────────────────────────────── */
 
 export async function addUnitAction(subjectId: string, name: string) {
-  await requireUser(); // auth guard
+  const user = await requireUser();
+  const [ownedSubject] = await db.select({ id: subjects.id }).from(subjects).where(and(eq(subjects.id, subjectId), eq(subjects.userId, user.id))).limit(1).all();
+  if (!ownedSubject) return { ok: false as const, error: "Subject not found" };
   const n = name.trim();
   if (!n) return { ok: false as const, error: "Unit name is required" };
   const existing = await db.select().from(units).where(eq(units.subjectId, subjectId)).all();
@@ -81,7 +83,15 @@ export async function addUnitAction(subjectId: string, name: string) {
 }
 
 export async function deleteUnitAction(unitId: string) {
-  await requireUser(); // auth guard
+  const user = await requireUser();
+  const [ownedUnit] = await db
+    .select({ id: units.id })
+    .from(units)
+    .innerJoin(subjects, eq(units.subjectId, subjects.id))
+    .where(and(eq(units.id, unitId), eq(subjects.userId, user.id)))
+    .limit(1)
+    .all();
+  if (!ownedUnit) return { ok: false as const, error: "Unit not found" };
   await db.delete(units).where(eq(units.id, unitId)).run();
   revalidatePath("/app/syllabus");
   return { ok: true as const };
@@ -94,7 +104,15 @@ const topicSchema = z.object({
 });
 
 export async function addTopicAction(unitId: string, input: { name: string; difficulty?: number; description?: string }) {
-  await requireUser(); // auth guard
+  const user = await requireUser();
+  const [ownedUnit] = await db
+    .select({ id: units.id })
+    .from(units)
+    .innerJoin(subjects, eq(units.subjectId, subjects.id))
+    .where(and(eq(units.id, unitId), eq(subjects.userId, user.id)))
+    .limit(1)
+    .all();
+  if (!ownedUnit) return { ok: false as const, error: "Unit not found" };
   const parsed = topicSchema.safeParse(input);
   if (!parsed.success) return { ok: false as const, error: "Invalid topic" };
   const existing = await db.select().from(topics).where(eq(topics.unitId, unitId)).all();
@@ -112,7 +130,16 @@ export async function addTopicAction(unitId: string, input: { name: string; diff
 }
 
 export async function updateTopicAction(topicId: string, input: { name?: string; difficulty?: number; description?: string }) {
-  await requireUser(); // auth guard
+  const user = await requireUser();
+  const [ownedTopic] = await db
+    .select({ id: topics.id })
+    .from(topics)
+    .innerJoin(units, eq(topics.unitId, units.id))
+    .innerJoin(subjects, eq(units.subjectId, subjects.id))
+    .where(and(eq(topics.id, topicId), eq(subjects.userId, user.id)))
+    .limit(1)
+    .all();
+  if (!ownedTopic) return { ok: false as const, error: "Topic not found" };
   const parsed = topicSchema.partial().safeParse(input);
   if (!parsed.success) return { ok: false as const, error: "Invalid topic" };
   await db
@@ -127,7 +154,16 @@ export async function updateTopicAction(topicId: string, input: { name?: string;
 const TOPIC_STATUSES = ["not_started", "learning", "completed", "needs_revision"] as const;
 
 export async function setTopicStatusAction(topicId: string, status: (typeof TOPIC_STATUSES)[number]) {
-  await requireUser(); // auth guard
+  const user = await requireUser();
+  const [ownedTopic] = await db
+    .select({ id: topics.id })
+    .from(topics)
+    .innerJoin(units, eq(topics.unitId, units.id))
+    .innerJoin(subjects, eq(units.subjectId, subjects.id))
+    .where(and(eq(topics.id, topicId), eq(subjects.userId, user.id)))
+    .limit(1)
+    .all();
+  if (!ownedTopic) return { ok: false as const, error: "Topic not found" };
   if (!TOPIC_STATUSES.includes(status)) return { ok: false as const, error: "Invalid status" };
   const now = new Date().toISOString();
   await db
@@ -146,7 +182,16 @@ export async function setTopicStatusAction(topicId: string, status: (typeof TOPI
 }
 
 export async function deleteTopicAction(topicId: string) {
-  await requireUser(); // auth guard
+  const user = await requireUser();
+  const [ownedTopic] = await db
+    .select({ id: topics.id })
+    .from(topics)
+    .innerJoin(units, eq(topics.unitId, units.id))
+    .innerJoin(subjects, eq(units.subjectId, subjects.id))
+    .where(and(eq(topics.id, topicId), eq(subjects.userId, user.id)))
+    .limit(1)
+    .all();
+  if (!ownedTopic) return { ok: false as const, error: "Topic not found" };
   await db.delete(topics).where(eq(topics.id, topicId)).run();
   revalidatePath("/app/syllabus");
   return { ok: true as const };
@@ -244,6 +289,21 @@ export async function setTaskStatusAction(id: string, status: "todo" | "in_progr
   revalidatePath("/app/tasks");
   revalidatePath("/app");
   return { ok: true as const };
+}
+
+export async function completeTaskByTitleAction(title: string) {
+  const user = await requireUser();
+  const needle = title.trim().slice(0, 160);
+  if (!needle) return { ok: false as const, error: "Tell me which task to complete." };
+  const matches = await db
+    .select({ id: tasks.id, title: tasks.title })
+    .from(tasks)
+    .where(and(eq(tasks.userId, user.id), eq(tasks.title, needle)))
+    .limit(2)
+    .all();
+  if (matches.length === 0) return { ok: false as const, error: `I couldn't find a task named ${needle}.` };
+  if (matches.length > 1) return { ok: false as const, error: `I found more than one task named ${needle}. Open Tasks to choose one.` };
+  return setTaskStatusAction(matches[0]!.id, "completed");
 }
 
 export async function deleteTaskAction(id: string) {

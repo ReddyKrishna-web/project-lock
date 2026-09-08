@@ -2,8 +2,10 @@
 
 import * as React from "react";
 import { createPortal } from "react-dom";
+import { AnimatePresence, motion } from "motion/react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { modalBackdrop, modalPanel } from "@/components/motion/variants";
 
 export function Dialog({
   open,
@@ -23,32 +25,8 @@ export function Dialog({
   size?: "sm" | "md" | "lg";
 }) {
   const panelRef = React.useRef<HTMLDivElement>(null);
-  // Dialog lifecycle as a single state machine — no setState-in-effect.
-  // "closed" → (open) → "opening" (mounted, pre-rAF) → "open-vis" (visible)
-  // → (closed) → "closing" (fade-out) → "closed" (unmounted after 180ms).
-  const [phase, setPhase] = React.useState<
-    "closed" | "opening" | "open-vis" | "closing"
-  >(open ? "opening" : "closed");
-  const [prevOpen, setPrevOpen] = React.useState(open);
-  // Prop change → phase transition happens during render (React's documented
-  // pattern for adjusting state when a prop changes) — no effect needed.
-  if (open !== prevOpen) {
-    setPrevOpen(open);
-    setPhase(open ? "opening" : "closing");
-  }
-  const mounted = phase !== "closed";
-  const visible = phase === "open-vis";
-
-  React.useEffect(() => {
-    if (phase === "opening") {
-      const raf = requestAnimationFrame(() => setPhase("open-vis"));
-      return () => cancelAnimationFrame(raf);
-    }
-    if (phase === "closing") {
-      const t = setTimeout(() => setPhase("closed"), 180);
-      return () => clearTimeout(t);
-    }
-  }, [phase]);
+  const titleId = React.useId();
+  const descriptionId = React.useId();
 
   React.useEffect(() => {
     if (!open) return;
@@ -63,63 +41,99 @@ export function Dialog({
     };
   }, [open, onClose]);
 
+  React.useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Tab" || !panelRef.current) return;
+      const focusable = panelRef.current.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open]);
+
   // focus management
   React.useEffect(() => {
-    if (open && mounted) {
+    if (open) {
       const panel = panelRef.current;
       const prev = document.activeElement as HTMLElement | null;
       panel?.focus();
       return () => prev?.focus?.();
     }
-  }, [open, mounted]);
-
-  if (!mounted) return null;
+  }, [open ]);
 
   const maxW = { sm: "max-w-md", md: "max-w-lg", lg: "max-w-2xl" }[size];
 
+  // Portals need document — never render on the server. (The pre-motion
+  // phase machine returned null until "opening"; AnimatePresence covers
+  // the client lifecycle, so this guard only skips SSR.)
+  if (typeof document === "undefined") return null;
+
   return createPortal(
-    <div
-      className={cn("fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-6", visible ? "animate-fade-in" : "opacity-0 transition-opacity")}
-      role="dialog"
-      aria-modal="true"
-      aria-label={title}
-    >
-      <div
-        className="absolute inset-0 bg-foreground/25 backdrop-blur-[2px]"
-        onClick={onClose}
-        aria-hidden
-      />
-      <div
-        ref={panelRef}
-        tabIndex={-1}
-        className={cn(
-          "relative z-10 w-full rounded-t-3xl bg-card pop-shadow outline-none sm:rounded-3xl",
-          "transition-all duration-200 ease-out",
-          visible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-[0.98] opacity-0",
-          maxW,
-        )}
-      >
-        <div className="flex items-start justify-between gap-4 px-6 pt-6">
-          <div>
-            <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
-            {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
-          </div>
-          <button
+    <AnimatePresence>
+      {open && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          aria-describedby={description ? descriptionId : undefined}
+        >
+          <motion.div
+            variants={modalBackdrop}
+            initial="hidden"
+            animate="show"
+            exit="exit"
+            className="absolute inset-0 bg-black/60"
             onClick={onClose}
-            aria-label="Close dialog"
-            className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
+            aria-hidden
+          />
+          <motion.div
+            ref={panelRef}
+            tabIndex={-1}
+            variants={modalPanel}
+            initial="hidden"
+            animate="show"
+            exit="exit"
+            className={cn(
+              "relative z-10 max-h-[85vh] w-full overflow-hidden rounded-t-[12px] border-[3px] border-ink bg-card text-card-foreground shadow-brutal-lg outline-none sm:rounded-[8px]",
+              maxW,
+            )}
           >
-            <X className="h-4.5 w-4.5" />
-          </button>
+            <div className="flex items-start justify-between gap-4 px-6 pt-6">
+              <div>
+                <h2 id={titleId} className="font-brutal-display text-xl tracking-tight">{title}</h2>
+                {description && <p id={descriptionId} className="mt-1 text-sm text-muted-foreground">{description}</p>}
+              </div>
+              <button
+                onClick={onClose}
+                aria-label="Close dialog"
+                className="brutal-press rounded-[6px] border-2 border-ink bg-card p-1.5 text-muted-foreground shadow-brutal-sm hover:text-foreground cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="max-h-[70vh] overflow-y-auto px-6 py-5">{children}</div>
+            {footer && (
+              <div className="flex items-center justify-end gap-2.5 border-t-2 border-ink px-6 py-4">
+                {footer}
+              </div>
+            )}
+          </motion.div>
         </div>
-        <div className="max-h-[70vh] overflow-y-auto px-6 py-5">{children}</div>
-        {footer && (
-          <div className="flex items-center justify-end gap-2.5 border-t border-border bg-muted/30 px-6 py-4 rounded-b-3xl">
-            {footer}
-          </div>
-        )}
-      </div>
-    </div>,
+      )}
+    </AnimatePresence>,
     document.body,
   );
 }

@@ -171,17 +171,17 @@ export function OnboardingWizard() {
                 <button
                   onClick={() => i < step && setStep(i)}
                   className={cn(
-                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition-all cursor-pointer",
-                    done && "border-success bg-success text-white",
-                    active && "border-primary bg-primary-soft text-primary",
-                    !done && !active && "border-border bg-card text-muted-foreground",
+                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all cursor-pointer",
+                    done && "bg-success text-white shadow-raise-sm",
+                    active && "bg-primary text-primary-foreground shadow-raise-sm ring-2 ring-ring/30",
+                    !done && !active && "bg-card text-muted-foreground shadow-raise-sm",
                   )}
                   aria-label={s.label}
                 >
                   {done ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
                 </button>
                 {i < STEPS.length - 1 && (
-                  <span className={cn("h-0.5 flex-1 rounded-full", i < step ? "bg-success" : "bg-border")} />
+                  <span className={cn("h-0.5 flex-1 rounded-full shadow-inset-sm", i < step ? "bg-success/70" : "bg-muted")} />
                 )}
               </div>
             );
@@ -192,7 +192,7 @@ export function OnboardingWizard() {
       {generating ? (
         <Card>
           <CardBody className="flex flex-col items-center py-14 text-center">
-            <span className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-white animate-float">
+            <span className="neo-raise-sm mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground animate-float">
               <Sparkles className="h-8 w-8" />
             </span>
             <div className="space-y-2">
@@ -219,7 +219,7 @@ export function OnboardingWizard() {
             {/* WELCOME */}
             {step === 0 && (
               <div className="py-6 text-center">
-                <span className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-primary text-white pop-shadow">
+                <span className="neo-float mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-primary text-primary-foreground">
                   <Rocket className="h-10 w-10" />
                 </span>
                 <h1 className="text-2xl font-bold tracking-tight">Welcome to StudyPilot</h1>
@@ -279,7 +279,7 @@ export function OnboardingWizard() {
                 <h2 className="text-lg font-bold tracking-tight">What are you studying?</h2>
                 <p className="text-sm text-muted-foreground">Add each subject and (optionally) its main topics, one per line.</p>
                 {subjects.map((s, i) => (
-                  <div key={i} className="space-y-3 rounded-2xl border border-border p-4">
+                  <div key={i} className="space-y-3 rounded-2xl bg-muted/40 p-4 shadow-inset-sm">
                     <div className="flex items-center gap-2">
                       <Field label={`Subject ${i + 1}`} required className="flex-1">
                         <Input
@@ -357,12 +357,12 @@ export function OnboardingWizard() {
                 <h2 className="text-lg font-bold tracking-tight">Upcoming exams</h2>
                 <p className="text-sm text-muted-foreground">We&apos;ll build a preparation roadmap and schedule around these.</p>
                 {exams.length === 0 && (
-                  <p className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+                  <p className="rounded-xl bg-muted/40 px-4 py-6 text-center text-sm text-muted-foreground shadow-inset-sm">
                     No exams? Skip this step — you can add them later.
                   </p>
                 )}
                 {exams.map((e, i) => (
-                  <div key={i} className="grid grid-cols-[1fr_1fr_auto] items-end gap-3 rounded-2xl border border-border p-4">
+                  <div key={i} className="grid grid-cols-[1fr_1fr_auto] items-end gap-3 rounded-2xl bg-muted/40 p-4 shadow-inset-sm">
                     <Field label="Exam name">
                       <Input
                         value={e.name}
@@ -413,12 +413,12 @@ export function OnboardingWizard() {
                 <h2 className="text-lg font-bold tracking-tight">Deadlines & assignments</h2>
                 <p className="text-sm text-muted-foreground">These get planned into your day automatically as they approach.</p>
                 {tasks.length === 0 && (
-                  <p className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+                  <p className="rounded-xl bg-muted/40 px-4 py-6 text-center text-sm text-muted-foreground shadow-inset-sm">
                     Nothing due soon? Skip — tasks can be added later.
                   </p>
                 )}
                 {tasks.map((t, i) => (
-                  <div key={i} className="grid grid-cols-2 items-end gap-3 rounded-2xl border border-border p-4">
+                  <div key={i} className="grid grid-cols-2 items-end gap-3 rounded-2xl bg-muted/40 p-4 shadow-inset-sm">
                     <Field label="Task" className="col-span-2">
                       <Input
                         value={t.title}
@@ -501,8 +501,8 @@ export function OnboardingWizard() {
                           key={t.key}
                           onClick={() => setTimes(on ? times.filter((x) => x !== t.key) : [...times, t.key])}
                           className={cn(
-                            "rounded-full border px-4 py-2 text-sm font-semibold transition-colors cursor-pointer",
-                            on ? "border-primary bg-primary-soft text-primary" : "border-border bg-card text-muted-foreground hover:text-foreground",
+                            "rounded-full px-4 py-2 text-sm font-semibold transition-all cursor-pointer",
+                            on ? "bg-primary-soft/80 text-primary shadow-inset-sm ring-1 ring-inset ring-primary/30" : "bg-card text-muted-foreground shadow-raise-sm hover:text-foreground",
                           )}
                         >
                           {t.label}
@@ -525,8 +525,8 @@ export function OnboardingWizard() {
                         key={s.key}
                         onClick={() => setStyle(s.key)}
                         className={cn(
-                          "rounded-xl border p-3 text-left transition-colors cursor-pointer",
-                          style === s.key ? "border-primary bg-primary-soft/60" : "border-border bg-card hover:border-primary/30",
+                          "rounded-xl p-3 text-left transition-all cursor-pointer",
+                          style === s.key ? "bg-primary-soft/70 shadow-inset-sm ring-1 ring-inset ring-primary/25" : "bg-card shadow-raise-sm hover:shadow-raise",
                         )}
                       >
                         <p className="text-[13px] font-semibold">{s.label}</p>

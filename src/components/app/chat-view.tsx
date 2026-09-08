@@ -3,15 +3,19 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowUp, MessageSquarePlus, History, Rocket, Sparkles, FileText } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { ArrowUp, FileText, History, LoaderCircle, MessageSquarePlus, Rocket, Sparkles, Volume2 } from "lucide-react";
+import { listItem } from "@/components/motion/variants";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/toaster";
+import { useGo1Optional } from "@/components/voice/Go1Provider";
 import {
   newChatSessionAction,
   openChatSessionAction,
   sessionMessagesAction,
 } from "@/lib/actions/sessions";
 import { Avatar } from "@/components/ui/avatar";
+import { useSpeech } from "@/hooks/useSpeech";
 
 type Msg = {
   id: string;
@@ -94,13 +98,20 @@ export function ChatView({
   sessions: SessionInfo[];
 }) {
   const { toast } = useToast();
+  const { speak, isSpeaking } = useSpeech();
   const router = useRouter();
   const [messages, setMessages] = React.useState<Msg[]>(initialMessages);
   const [sessions, setSessions] = React.useState<SessionInfo[]>(initialSessions);
   const [activeId, setActiveId] = React.useState(activeConversationId);
   const [input, setInput] = React.useState("");
   const [thinking, setThinking] = React.useState(false);
+  const [streaming, setStreaming] = React.useState(false);
   const [showSessions, setShowSessions] = React.useState(false);
+  // G-o1 handoff: a voice question staged by the provider is typed into
+  // Pilot's own input and sent as the user — one shared conversation.
+  const go1 = useGo1Optional();
+  const voiceAskedRef = React.useRef(false);
+  const pilotStatus = thinking && !streaming ? "Understanding your request" : streaming ? "Preparing your response" : null;
   const bottomRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -117,6 +128,7 @@ export function ChatView({
     setInput("");
     setMessages((m) => [...m, { id: `local-${Date.now()}`, role: "user", content: trimmed, meta: null }]);
     setThinking(true);
+    setStreaming(false);
     const aiId = `ai-${Date.now()}`;
     try {
       // Streaming path: token-by-token via SSE, with the server's final
@@ -167,13 +179,19 @@ export function ChatView({
             acc += typeof payload.t === "string" ? payload.t : "";
             if (!created) {
               created = true;
-              setThinking(false);
+              setStreaming(true);
               setMessages((m) => [...m, { id: aiId, role: "assistant", content: acc, meta: null }]);
             } else {
               setMessages((m) => m.map((x) => (x.id === aiId ? { ...x, content: acc } : x)));
             }
           } else if (event === "done") {
             const finalContent = typeof payload.reply === "string" && payload.reply ? payload.reply : acc;
+            // Voice-asked question answered → hand the reply back to G-o1
+            // for its spoken summary. Typed questions never trigger speech.
+            if (voiceAskedRef.current) {
+              voiceAskedRef.current = false;
+              go1?.reportAnswer(finalContent);
+            }
             const meta = {
               actions: (payload.actions as { label: string; href: string }[] | undefined) ?? [],
               suggested: (payload.suggested as string[] | undefined) ?? [],
@@ -201,8 +219,32 @@ export function ChatView({
       toast("error", "Connection problem", "Your message wasn't delivered. Check your connection and try again.");
     } finally {
       setThinking(false);
+      setStreaming(false);
     }
   };
+
+  const readMessage = async (text: string) => {
+    try {
+      await speak(text);
+    } catch (error) {
+      toast("error", "Could not read response", error instanceof Error ? error.message : "Please try again.");
+    }
+  };
+
+  // G-o1 staged a voice question → show it in the input (as the user
+  // would type it), then send. takePendingQuestion is consume-once and
+  // sync-guarded, so StrictMode remounts and re-renders can't double-send.
+  const voicePending = go1?.pendingQuestion ?? null;
+  React.useEffect(() => {
+    if (!voicePending || !go1 || thinking) return;
+    const q = go1.takePendingQuestion();
+    if (!q) return;
+    setInput(q);
+    voiceAskedRef.current = true;
+    const t = window.setTimeout(() => void send(q), 700);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voicePending]);
 
   const startNewSession = async () => {
     const res = await newChatSessionAction();
@@ -237,14 +279,14 @@ export function ChatView({
       <div className="flex items-center gap-2 pb-2">
         <button
           onClick={startNewSession}
-          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-primary/40 hover:text-primary cursor-pointer"
+          className="inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-raise-sm tactile hover:text-primary cursor-pointer"
         >
           <MessageSquarePlus className="h-3.5 w-3.5" /> New session
         </button>
         <button
           onClick={() => setShowSessions((v) => !v)}
           aria-expanded={showSessions}
-          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
+          className="inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground shadow-raise-sm tactile hover:text-foreground cursor-pointer"
         >
           <History className="h-3.5 w-3.5" /> Past sessions
           {sessions.length > 1 && (
@@ -255,7 +297,7 @@ export function ChatView({
 
       {/* Past sessions drawer */}
       {showSessions && (
-        <div className="pop-shadow mb-3 max-h-64 space-y-1 overflow-y-auto rounded-2xl border border-border bg-card p-2">
+        <div className="neo-float mb-3 max-h-64 space-y-1 overflow-y-auto rounded-2xl border border-border/60 bg-elevated p-2">
           {sessions.length <= 1 ? (
             <p className="px-2 py-3 text-center text-xs text-muted-foreground">
               No past sessions yet — each time you log in, this chat starts fresh and the old one is saved here.
@@ -268,10 +310,10 @@ export function ChatView({
                   openSession(s.id);
                   setShowSessions(false);
                 }}
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors cursor-pointer",
-                  s.active ? "bg-primary-soft" : "hover:bg-muted",
-                )}
+              className={cn(
+                "flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition-all cursor-pointer",
+                s.active ? "bg-primary-soft/80 shadow-inset-sm" : "hover:bg-muted/50",
+              )}
               >
                 <FileText className={cn("h-4 w-4 shrink-0", s.active ? "text-primary" : "text-muted-foreground")} />
                 <span className="min-w-0 flex-1">
@@ -289,7 +331,7 @@ export function ChatView({
       <div className="flex-1 space-y-5 overflow-y-auto px-1 py-2">
         {messages.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center text-center">
-            <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-white pop-shadow">
+            <span className="neo-float mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
               <Rocket className="h-7 w-7" />
             </span>
             <p className="text-lg font-bold tracking-tight">Hey {userName.split(" ")[0]} 👋</p>
@@ -298,15 +340,33 @@ export function ChatView({
             </p>
           </div>
         )}
+        <AnimatePresence initial={false}>
         {messages.map((m) => (
-          <div key={m.id} className={cn("flex gap-3", m.role === "user" ? "flex-row-reverse" : "")}>
+          <motion.div
+            key={m.id}
+            variants={listItem}
+            initial="hidden"
+            animate="show"
+            className={cn("flex gap-3", m.role === "user" ? "flex-row-reverse" : "")}
+          >
             {m.role === "assistant" ? (
               <Avatar name="Pilot" size="sm" className="mt-0.5" />
             ) : (
               <Avatar name={userName} size="sm" className="mt-0.5" />
             )}
-            <div className={cn("max-w-[82%] rounded-2xl px-4 py-3 text-[13.5px] leading-relaxed", m.role === "user" ? "rounded-br-md bg-primary text-primary-foreground" : "rounded-bl-md border border-border bg-card")}>
+            <div className={cn("max-w-[82%] rounded-3xl px-4 py-3 text-[13.5px] leading-relaxed", m.role === "user" ? "rounded-br-md bg-primary text-primary-foreground shadow-raise-sm" : "rounded-bl-md border border-border/50 bg-card shadow-raise-sm")}>
               <Rich text={m.content} />
+              {m.role === "assistant" && (
+                <button
+                  type="button"
+                  onClick={() => void readMessage(m.content)}
+                  disabled={isSpeaking}
+                  aria-label="Read response aloud"
+                  className="mt-3 inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+                >
+                  {isSpeaking ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Volume2 className="h-4 w-4" />}
+                </button>
+              )}
               {m.meta?.actions && m.meta.actions.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-2">
                   {m.meta.actions.map((a) => (
@@ -321,19 +381,23 @@ export function ChatView({
                 </div>
               )}
             </div>
-          </div>
+          </motion.div>
         ))}
+        </AnimatePresence>
         {thinking && (
-          <div className="flex gap-3">
+          <motion.div variants={listItem} initial="hidden" animate="show" className="flex gap-3">
             <Avatar name="Pilot" size="sm" className="mt-0.5" />
-            <div className="rounded-2xl rounded-bl-md border border-border bg-card px-4 py-3.5">
-              <span className="flex items-center gap-1.5 text-muted-foreground" role="status" aria-label="Pilot is thinking">
-                <span className="thinking-dot" />
-                <span className="thinking-dot" />
-                <span className="thinking-dot" />
+            <div className="rounded-3xl rounded-bl-md border border-border/50 bg-card px-4 py-3.5 shadow-raise-sm">
+              <span className="flex items-center gap-2 text-muted-foreground" role="status" aria-label={pilotStatus ?? "Pilot is thinking"}>
+                <span className="flex items-center gap-1.5" aria-hidden>
+                  <span className="thinking-dot" />
+                  <span className="thinking-dot" />
+                  <span className="thinking-dot" />
+                </span>
+                {pilotStatus && <span className="text-xs font-medium">{pilotStatus}…</span>}
               </span>
             </div>
-          </div>
+          </motion.div>
         )}
         <div ref={bottomRef} />
       </div>
@@ -345,12 +409,22 @@ export function ChatView({
             <button
               key={s}
               onClick={() => send(s)}
-              className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary cursor-pointer"
+              className="rounded-full bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground shadow-raise-sm tactile hover:text-primary cursor-pointer"
             >
               {s}
             </button>
           ))}
         </div>
+      )}
+
+      {/* live Pilot status — real streaming state only, never faked */}
+      {streaming && (
+        <p className="pb-1.5 text-xs font-medium text-muted-foreground" role="status" aria-live="polite">
+          <span className="inline-flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5 animate-pulse text-primary" aria-hidden />
+            Preparing your response…
+          </span>
+        </p>
       )}
 
       {/* input */}
@@ -359,7 +433,7 @@ export function ChatView({
           e.preventDefault();
           send(input);
         }}
-        className="flex items-end gap-2 rounded-2xl border border-border bg-card p-2 pop-shadow focus-within:border-primary/50"
+        className="flex items-end gap-2 rounded-3xl bg-card p-2 shadow-raise-lg focus-within:ring-2 focus-within:ring-primary/25"
       >
         <textarea
           value={input}
@@ -379,7 +453,7 @@ export function ChatView({
           type="submit"
           aria-label="Send message"
           disabled={!input.trim() || thinking}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-all hover:opacity-90 disabled:opacity-40 cursor-pointer"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-raise-sm tactile disabled:opacity-40 cursor-pointer"
         >
           <ArrowUp className="h-4.5 w-4.5" />
         </button>

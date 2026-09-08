@@ -45,7 +45,7 @@ export function AuthForm({ mode, googleConfigured = false }: { mode: "login" | "
     <Card className="w-full max-w-md">
       <CardBody className="pt-8">
         <div className="mb-7 flex flex-col items-center text-center">
-          <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-white pop-shadow">
+          <span className="neo-float mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
             <Rocket className="h-7 w-7" />
           </span>
           <h1 className="text-xl font-bold tracking-tight">
@@ -60,7 +60,7 @@ export function AuthForm({ mode, googleConfigured = false }: { mode: "login" | "
           <>
             <a
               href="/auth/google"
-              className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+              className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-card px-4 py-2.5 text-sm font-semibold text-foreground shadow-raise-sm tactile cursor-pointer"
             >
               <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" aria-hidden>
                 <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z" />
@@ -107,7 +107,7 @@ export function AuthForm({ mode, googleConfigured = false }: { mode: "login" | "
             </div>
             <button
               onClick={fillDemo}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-primary/40 bg-primary-soft/40 px-4 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary-soft cursor-pointer"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary-soft/60 px-4 py-3 text-sm font-semibold text-primary shadow-inset-sm ring-1 ring-inset ring-primary/20 transition-colors hover:bg-primary-soft cursor-pointer"
             >
               <Sparkles className="h-4 w-4" /> Try the demo student (Alex)
             </button>

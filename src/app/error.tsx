@@ -23,7 +23,7 @@ export default function Error({
 
   return (
     <div className="flex min-h-[70dvh] flex-col items-center justify-center px-4 py-16 text-center">
-      <span className="mb-6 flex h-16 w-16 items-center justify-center rounded-3xl bg-primary text-white pop-shadow">
+      <span className="neo-float mb-6 flex h-16 w-16 items-center justify-center rounded-3xl bg-primary text-primary-foreground">
         <Rocket className="h-8 w-8" aria-hidden />
       </span>
       <h1 className="text-2xl font-bold tracking-tight">Turbulence hit</h1>
@@ -37,13 +37,13 @@ export default function Error({
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
         <button
           onClick={reset}
-          className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary/90 cursor-pointer"
+          className="shadow-raise-sm tactile inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground cursor-pointer"
         >
           <RotateCcw className="h-4 w-4" /> Try again
         </button>
         <Link
           href="/app"
-          className="inline-flex items-center gap-2 rounded-xl border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+          className="shadow-raise-sm tactile inline-flex items-center gap-2 rounded-xl bg-card px-5 py-2.5 text-sm font-semibold text-foreground"
         >
           <Home className="h-4 w-4" /> Go to dashboard
         </Link>

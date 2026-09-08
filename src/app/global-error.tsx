@@ -16,8 +16,8 @@ export default function GlobalError({
       <body
         style={{
           fontFamily: "system-ui, sans-serif",
-          background: "#0f1117",
-          color: "#e5e7eb",
+          background: "#1c1914",
+          color: "#ece7db",
           minHeight: "100dvh",
           display: "flex",
           flexDirection: "column",
@@ -29,12 +29,12 @@ export default function GlobalError({
         }}
       >
         <h1 style={{ fontSize: "1.5rem", fontWeight: 700 }}>StudyPilot hit unexpected turbulence</h1>
-        <p style={{ maxWidth: "28rem", color: "#9ca3af", lineHeight: 1.6 }}>
+        <p style={{ maxWidth: "28rem", color: "#a7a093", lineHeight: 1.6 }}>
           A critical error occurred. Please try again — if it persists, restart
           the app server.
         </p>
         {error.digest && (
-          <p style={{ fontSize: "0.75rem", color: "#6b7280" }}>Error ID: {error.digest}</p>
+          <p style={{ fontSize: "0.75rem", color: "#8f887a" }}>Error ID: {error.digest}</p>
         )}
         <button
           onClick={reset}
@@ -42,7 +42,7 @@ export default function GlobalError({
             marginTop: "1.5rem",
             padding: "0.65rem 1.25rem",
             borderRadius: "0.75rem",
-            background: "#5753d4",
+            background: "#1e6e3c",
             color: "white",
             fontWeight: 600,
             border: "none",

@@ -2,7 +2,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("shimmer rounded-xl bg-muted", className)} aria-hidden />;
+  return <div className={cn("rounded-[6px] border-2 border-ink bg-muted", className)} aria-hidden />;
 }
 
 export function SkeletonLines({ rows = 3, className }: { rows?: number; className?: string }) {
@@ -33,13 +33,13 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/50 text-center",
+        "flex flex-col items-center justify-center rounded-[6px] border-2 border-dashed border-ink bg-muted/40 text-center",
         compact ? "px-6 py-10" : "px-8 py-16",
         className,
       )}
     >
       {icon && (
-        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-soft text-primary">
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-[6px] border-2 border-ink bg-card text-primary shadow-brutal-sm">
           {icon}
         </div>
       )}

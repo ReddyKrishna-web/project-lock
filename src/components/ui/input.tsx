@@ -16,7 +16,7 @@ export function Label({
 }
 
 const baseField =
-  "w-full rounded-xl border border-input bg-card px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 shadow-none transition-colors focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10 disabled:opacity-50";
+  "w-full h-11 rounded-[6px] border-2 border-ink bg-input px-3.5 text-sm text-foreground placeholder:text-muted-foreground/70 transition-[box-shadow,border-color,background-color,color] focus:border-ink focus:bg-card focus:outline-none focus:shadow-[4px_4px_0_0_var(--brutal-focus)] disabled:opacity-50";
 
 export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
   ({ className, ...props }, ref) => (

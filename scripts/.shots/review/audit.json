@@ -1,0 +1,1049 @@
+{
+  "captures": [
+    {
+      "route": "landing",
+      "theme": "light",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\landing--light--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "login",
+      "theme": "light",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\login--light--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "signup",
+      "theme": "light",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\signup--light--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "dashboard",
+      "theme": "light",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\dashboard--light--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "today",
+      "theme": "light",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\today--light--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "calendar",
+      "theme": "light",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\calendar--light--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "syllabus",
+      "theme": "light",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\syllabus--light--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "subjects",
+      "theme": "light",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\subjects--light--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "exams",
+      "theme": "light",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\exams--light--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "tasks",
+      "theme": "light",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\tasks--light--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "chat",
+      "theme": "light",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\chat--light--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "focus",
+      "theme": "light",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\focus--light--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "progress",
+      "theme": "light",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\progress--light--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "achievements",
+      "theme": "light",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\achievements--light--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "settings",
+      "theme": "light",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\settings--light--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "dashboard",
+      "theme": "dark",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\dashboard--dark--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "today",
+      "theme": "dark",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\today--dark--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "calendar",
+      "theme": "dark",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\calendar--dark--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "syllabus",
+      "theme": "dark",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\syllabus--dark--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "subjects",
+      "theme": "dark",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\subjects--dark--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "exams",
+      "theme": "dark",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\exams--dark--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "tasks",
+      "theme": "dark",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\tasks--dark--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "chat",
+      "theme": "dark",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\chat--dark--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "focus",
+      "theme": "dark",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\focus--dark--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "progress",
+      "theme": "dark",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\progress--dark--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "achievements",
+      "theme": "dark",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\achievements--dark--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "settings",
+      "theme": "dark",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\settings--dark--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "landing",
+      "theme": "dark",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\landing--dark--desktop.png",
+      "overflow": 0
+    },
+    {
+      "route": "dashboard",
+      "theme": "light",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\dashboard--light--mobile.png",
+      "overflow": 0
+    },
+    {
+      "route": "today",
+      "theme": "light",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\today--light--mobile.png",
+      "overflow": 0
+    },
+    {
+      "route": "calendar",
+      "theme": "light",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\calendar--light--mobile.png",
+      "overflow": 0
+    },
+    {
+      "route": "chat",
+      "theme": "light",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\chat--light--mobile.png",
+      "overflow": 0
+    },
+    {
+      "route": "focus",
+      "theme": "light",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\focus--light--mobile.png",
+      "overflow": 0
+    },
+    {
+      "route": "exams",
+      "theme": "light",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\exams--light--mobile.png",
+      "overflow": 0
+    },
+    {
+      "route": "landing",
+      "theme": "light",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\landing--light--mobile.png",
+      "overflow": 0
+    },
+    {
+      "route": "login",
+      "theme": "light",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\login--light--mobile.png",
+      "overflow": 0
+    },
+    {
+      "route": "dashboard",
+      "theme": "dark",
+      "file": "C:\\Users\\aKris\\Downloads\\Project-lock\\scripts\\.shots\\review\\dashboard--dark--mobile.png",
+      "overflow": 0
+    }
+  ],
+  "consoleErrors": {},
+  "overflows": {},
+  "smallTargets": {
+    "landing (light)": [
+      {
+        "tag": "A",
+        "cls": "inline-flex",
+        "h": 24
+      },
+      {
+        "tag": "A",
+        "cls": "mt-7 inline-flex w-full",
+        "h": 24
+      },
+      {
+        "tag": "A",
+        "cls": "mt-7 inline-flex w-full",
+        "h": 24
+      },
+      {
+        "tag": "A",
+        "cls": "mt-7 inline-flex w-full",
+        "h": 24
+      },
+      {
+        "tag": "A",
+        "cls": "hover:text-foreground",
+        "h": 16
+      },
+      {
+        "tag": "A",
+        "cls": "hover:text-foreground",
+        "h": 16
+      }
+    ],
+    "login (light)": [
+      {
+        "tag": "A",
+        "cls": "inline-flex items-center gap-1.5 underline-offset-4 hover:un",
+        "h": 24
+      },
+      {
+        "tag": "A",
+        "cls": "mt-3 inline-flex items-center gap-1.5 text-[13px] font-semib",
+        "h": 20
+      },
+      {
+        "tag": "A",
+        "cls": "mt-2 inline-flex text-xs font-semibold text-primary hover:un",
+        "h": 16
+      },
+      {
+        "tag": "A",
+        "cls": "mt-2 inline-flex text-xs font-semibold text-primary hover:un",
+        "h": 16
+      },
+      {
+        "tag": "A",
+        "cls": "mt-3 inline-flex text-xs font-semibold text-primary hover:un",
+        "h": 16
+      }
+    ],
+    "signup (light)": [
+      {
+        "tag": "A",
+        "cls": "inline-flex items-center gap-1.5 underline-offset-4 hover:un",
+        "h": 24
+      },
+      {
+        "tag": "A",
+        "cls": "mt-3 inline-flex items-center gap-1.5 text-[13px] font-semib",
+        "h": 20
+      },
+      {
+        "tag": "A",
+        "cls": "mt-2 inline-flex text-xs font-semibold text-primary hover:un",
+        "h": 16
+      },
+      {
+        "tag": "A",
+        "cls": "mt-2 inline-flex text-xs font-semibold text-primary hover:un",
+        "h": 16
+      },
+      {
+        "tag": "A",
+        "cls": "mt-3 inline-flex text-xs font-semibold text-primary hover:un",
+        "h": 16
+      }
+    ],
+    "dashboard (light)": [
+      {
+        "tag": "A",
+        "cls": "inline-flex items-center gap-1.5 underline-offset-4 hover:un",
+        "h": 24
+      },
+      {
+        "tag": "A",
+        "cls": "mt-3 inline-flex items-center gap-1.5 text-[13px] font-semib",
+        "h": 20
+      },
+      {
+        "tag": "A",
+        "cls": "mt-2 inline-flex text-xs font-semibold text-primary hover:un",
+        "h": 16
+      },
+      {
+        "tag": "A",
+        "cls": "mt-2 inline-flex text-xs font-semibold text-primary hover:un",
+        "h": 16
+      },
+      {
+        "tag": "A",
+        "cls": "mt-3 inline-flex text-xs font-semibold text-primary hover:un",
+        "h": 16
+      }
+    ],
+    "today (light)": [
+      {
+        "tag": "A",
+        "cls": "inline-flex items-center justify-center",
+        "h": 16
+      },
+      {
+        "tag": "A",
+        "cls": "inline-flex items-center gap-2",
+        "h": 24
+      }
+    ],
+    "calendar (light)": [
+      {
+        "tag": "DIV",
+        "cls": "flex items-center gap-1 rounded-lg px-1.5 py-1 shadow-raise-",
+        "h": 26
+      },
+      {
+        "tag": "DIV",
+        "cls": "flex items-center gap-1 rounded-lg px-1.5 py-1 shadow-raise-",
+        "h": 26
+      },
+      {
+        "tag": "DIV",
+        "cls": "flex items-center gap-1 rounded-lg px-1.5 py-1 shadow-raise-",
+        "h": 26
+      },
+      {
+        "tag": "DIV",
+        "cls": "flex items-center gap-1 rounded-lg px-1.5 py-1 shadow-raise-",
+        "h": 26
+      },
+      {
+        "tag": "DIV",
+        "cls": "flex items-center gap-1 rounded-lg px-1.5 py-1 shadow-raise-",
+        "h": 26
+      },
+      {
+        "tag": "DIV",
+        "cls": "flex items-center gap-1 rounded-lg px-1.5 py-1 shadow-raise-",
+        "h": 26
+      },
+      {
+        "tag": "DIV",
+        "cls": "flex items-center gap-1 rounded-lg px-1.5 py-1 shadow-raise-",
+        "h": 26
+      },
+      {
+        "tag": "DIV",
+        "cls": "flex items-center gap-1 rounded-lg px-1.5 py-1 shadow-raise-",
+        "h": 26
+      },
+      {
+        "tag": "DIV",
+        "cls": "flex items-center gap-1 rounded-lg px-1.5 py-1 shadow-raise-",
+        "h": 26
+      },
+      {
+        "tag": "DIV",
+        "cls": "flex items-center gap-1 rounded-lg px-1.5 py-1 shadow-raise-",
+        "h": 26
+      },
+      {
+        "tag": "DIV",
+        "cls": "flex items-center gap-1 rounded-lg px-1.5 py-1 shadow-raise-",
+        "h": 26
+      },
+      {
+        "tag": "DIV",
+        "cls": "flex items-center gap-1 rounded-lg px-1.5 py-1 shadow-raise-",
+        "h": 26
+      }
+    ],
+    "syllabus (light)": [
+      {
+        "tag": "BUTTON",
+        "cls": "mt-1 text-[13px] font-semibold text-primary hover:underline ",
+        "h": 20
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-2.5 py-1 text-[11px] font-medium transition-",
+        "h": 25
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-2.5 py-1 text-[11px] font-medium transition-",
+        "h": 25
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-2.5 py-1 text-[11px] font-medium transition-",
+        "h": 25
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-2.5 py-1 text-[11px] font-medium transition-",
+        "h": 25
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-2.5 py-1 text-[11px] font-medium transition-",
+        "h": 25
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-2.5 py-1 text-[11px] font-medium transition-",
+        "h": 25
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "mt-0.5 rounded-md p-0.5 text-muted-foreground hover:text-for",
+        "h": 20
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "mt-0.5 rounded-md p-0.5 text-muted-foreground hover:text-for",
+        "h": 20
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "mt-0.5 rounded-md p-0.5 text-muted-foreground hover:text-for",
+        "h": 20
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "mt-0.5 rounded-md p-0.5 text-muted-foreground hover:text-for",
+        "h": 20
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "mt-0.5 rounded-md p-0.5 text-muted-foreground hover:text-for",
+        "h": 20
+      }
+    ],
+    "tasks (light)": [
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "flex h-5.5 w-5.5 shrink-0 items-center justify-center rounde",
+        "h": 22
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "flex h-5.5 w-5.5 shrink-0 items-center justify-center rounde",
+        "h": 22
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "flex h-5.5 w-5.5 shrink-0 items-center justify-center rounde",
+        "h": 22
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "flex h-5.5 w-5.5 shrink-0 items-center justify-center rounde",
+        "h": 22
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "flex h-5.5 w-5.5 shrink-0 items-center justify-center rounde",
+        "h": 22
+      }
+    ],
+    "chat (light)": [
+      {
+        "tag": "BUTTON",
+        "cls": "inline-flex items-center gap-1.5 rounded-full bg-card px-3 p",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "inline-flex items-center gap-1.5 rounded-full bg-card px-3 p",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full bg-card px-3 py-1.5 text-xs font-medium text-mu",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full bg-card px-3 py-1.5 text-xs font-medium text-mu",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full bg-card px-3 py-1.5 text-xs font-medium text-mu",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full bg-card px-3 py-1.5 text-xs font-medium text-mu",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full bg-card px-3 py-1.5 text-xs font-medium text-mu",
+        "h": 28
+      }
+    ],
+    "focus (light)": [
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-",
+        "h": 28
+      }
+    ],
+    "progress (light)": [
+      {
+        "tag": "A",
+        "cls": "font-semibold text-primary hover:underline",
+        "h": 16
+      }
+    ],
+    "settings (light)": [
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-",
+        "h": 28
+      }
+    ],
+    "dashboard (dark)": [
+      {
+        "tag": "A",
+        "cls": "inline-flex items-center gap-1.5 underline-offset-4 hover:un",
+        "h": 24
+      },
+      {
+        "tag": "A",
+        "cls": "mt-3 inline-flex items-center gap-1.5 text-[13px] font-semib",
+        "h": 20
+      },
+      {
+        "tag": "A",
+        "cls": "mt-2 inline-flex text-xs font-semibold text-primary hover:un",
+        "h": 16
+      },
+      {
+        "tag": "A",
+        "cls": "mt-2 inline-flex text-xs font-semibold text-primary hover:un",
+        "h": 16
+      },
+      {
+        "tag": "A",
+        "cls": "mt-3 inline-flex text-xs font-semibold text-primary hover:un",
+        "h": 16
+      }
+    ],
+    "today (dark)": [
+      {
+        "tag": "A",
+        "cls": "inline-flex items-center justify-center",
+        "h": 16
+      },
+      {
+        "tag": "A",
+        "cls": "inline-flex items-center gap-2",
+        "h": 24
+      }
+    ],
+    "calendar (dark)": [
+      {
+        "tag": "DIV",
+        "cls": "flex items-center gap-1 rounded-lg px-1.5 py-1 shadow-raise-",
+        "h": 26
+      },
+      {
+        "tag": "DIV",
+        "cls": "flex items-center gap-1 rounded-lg px-1.5 py-1 shadow-raise-",
+        "h": 26
+      },
+      {
+        "tag": "DIV",
+        "cls": "flex items-center gap-1 rounded-lg px-1.5 py-1 shadow-raise-",
+        "h": 26
+      },
+      {
+        "tag": "DIV",
+        "cls": "flex items-center gap-1 rounded-lg px-1.5 py-1 shadow-raise-",
+        "h": 26
+      },
+      {
+        "tag": "DIV",
+        "cls": "flex items-center gap-1 rounded-lg px-1.5 py-1 shadow-raise-",
+        "h": 26
+      },
+      {
+        "tag": "DIV",
+        "cls": "flex items-center gap-1 rounded-lg px-1.5 py-1 shadow-raise-",
+        "h": 26
+      },
+      {
+        "tag": "DIV",
+        "cls": "flex items-center gap-1 rounded-lg px-1.5 py-1 shadow-raise-",
+        "h": 26
+      },
+      {
+        "tag": "DIV",
+        "cls": "flex items-center gap-1 rounded-lg px-1.5 py-1 shadow-raise-",
+        "h": 26
+      },
+      {
+        "tag": "DIV",
+        "cls": "flex items-center gap-1 rounded-lg px-1.5 py-1 shadow-raise-",
+        "h": 26
+      },
+      {
+        "tag": "DIV",
+        "cls": "flex items-center gap-1 rounded-lg px-1.5 py-1 shadow-raise-",
+        "h": 26
+      },
+      {
+        "tag": "DIV",
+        "cls": "flex items-center gap-1 rounded-lg px-1.5 py-1 shadow-raise-",
+        "h": 26
+      },
+      {
+        "tag": "DIV",
+        "cls": "flex items-center gap-1 rounded-lg px-1.5 py-1 shadow-raise-",
+        "h": 26
+      }
+    ],
+    "syllabus (dark)": [
+      {
+        "tag": "BUTTON",
+        "cls": "mt-1 text-[13px] font-semibold text-primary hover:underline ",
+        "h": 20
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-2.5 py-1 text-[11px] font-medium transition-",
+        "h": 25
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-2.5 py-1 text-[11px] font-medium transition-",
+        "h": 25
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-2.5 py-1 text-[11px] font-medium transition-",
+        "h": 25
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-2.5 py-1 text-[11px] font-medium transition-",
+        "h": 25
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-2.5 py-1 text-[11px] font-medium transition-",
+        "h": 25
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-2.5 py-1 text-[11px] font-medium transition-",
+        "h": 25
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "mt-0.5 rounded-md p-0.5 text-muted-foreground hover:text-for",
+        "h": 20
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "mt-0.5 rounded-md p-0.5 text-muted-foreground hover:text-for",
+        "h": 20
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "mt-0.5 rounded-md p-0.5 text-muted-foreground hover:text-for",
+        "h": 20
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "mt-0.5 rounded-md p-0.5 text-muted-foreground hover:text-for",
+        "h": 20
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "mt-0.5 rounded-md p-0.5 text-muted-foreground hover:text-for",
+        "h": 20
+      }
+    ],
+    "tasks (dark)": [
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "flex h-5.5 w-5.5 shrink-0 items-center justify-center rounde",
+        "h": 22
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "flex h-5.5 w-5.5 shrink-0 items-center justify-center rounde",
+        "h": 22
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "flex h-5.5 w-5.5 shrink-0 items-center justify-center rounde",
+        "h": 22
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "flex h-5.5 w-5.5 shrink-0 items-center justify-center rounde",
+        "h": 22
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "flex h-5.5 w-5.5 shrink-0 items-center justify-center rounde",
+        "h": 22
+      }
+    ],
+    "chat (dark)": [
+      {
+        "tag": "BUTTON",
+        "cls": "inline-flex items-center gap-1.5 rounded-full bg-card px-3 p",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "inline-flex items-center gap-1.5 rounded-full bg-card px-3 p",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full bg-card px-3 py-1.5 text-xs font-medium text-mu",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full bg-card px-3 py-1.5 text-xs font-medium text-mu",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full bg-card px-3 py-1.5 text-xs font-medium text-mu",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full bg-card px-3 py-1.5 text-xs font-medium text-mu",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full bg-card px-3 py-1.5 text-xs font-medium text-mu",
+        "h": 28
+      }
+    ],
+    "focus (dark)": [
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-",
+        "h": 28
+      }
+    ],
+    "progress (dark)": [
+      {
+        "tag": "A",
+        "cls": "font-semibold text-primary hover:underline",
+        "h": 16
+      }
+    ],
+    "settings (dark)": [
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-",
+        "h": 28
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-",
+        "h": 28
+      }
+    ],
+    "landing (dark)": [
+      {
+        "tag": "A",
+        "cls": "transition-colors hover:text-foreground",
+        "h": 20
+      },
+      {
+        "tag": "A",
+        "cls": "transition-colors hover:text-foreground",
+        "h": 20
+      },
+      {
+        "tag": "A",
+        "cls": "transition-colors hover:text-foreground",
+        "h": 20
+      },
+      {
+        "tag": "A",
+        "cls": "transition-colors hover:text-foreground",
+        "h": 20
+      },
+      {
+        "tag": "A",
+        "cls": "hidden sm:inline-flex rounded-full",
+        "h": 24
+      },
+      {
+        "tag": "A",
+        "cls": "inline-flex",
+        "h": 24
+      },
+      {
+        "tag": "A",
+        "cls": "mt-7 inline-flex w-full",
+        "h": 24
+      },
+      {
+        "tag": "A",
+        "cls": "mt-7 inline-flex w-full",
+        "h": 24
+      },
+      {
+        "tag": "A",
+        "cls": "mt-7 inline-flex w-full",
+        "h": 24
+      },
+      {
+        "tag": "A",
+        "cls": "hover:text-foreground",
+        "h": 16
+      },
+      {
+        "tag": "A",
+        "cls": "hover:text-foreground",
+        "h": 16
+      }
+    ]
+  }
+}

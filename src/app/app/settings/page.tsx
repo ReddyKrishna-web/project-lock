@@ -1,5 +1,6 @@
 import { requireUser } from "@/lib/auth/actions";
 import { getProfileBundle } from "@/lib/services/data";
+import { describeChain } from "@/lib/ai/provider";
 import { SettingsManager } from "@/components/app/settings-manager";
 
 export const dynamic = "force-dynamic";
@@ -9,11 +10,13 @@ export default async function SettingsPage() {
   const profile = await getProfileBundle(user.id);
   if (!profile) return null;
 
-  const provider = process.env.AI_PROVIDER || (process.env.AI_API_KEY ? "openai" : "");
+  // Multi-provider chain status (keys never leave the server): primary is
+  // the first keyed member of AI_PRIORITY; display shows the failover order.
+  const chain = describeChain().filter((m) => m.keyed);
   const aiStatus = {
-    provider: provider || "openai",
-    configured: Boolean(process.env.AI_API_KEY),
-    model: process.env.AI_MODEL || "gpt-4o-mini",
+    provider: chain.length ? chain.map((m) => m.id).join(" → ") : "openai",
+    configured: chain.length > 0,
+    model: chain.length ? chain[0]!.model : "gpt-4o-mini",
   };
 
   return (

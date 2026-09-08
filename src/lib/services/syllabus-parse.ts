@@ -108,7 +108,10 @@ Rules:
 
 /* ── Heuristic fallback ─────────────────────────────────────── */
 
-const UNIT_HEADING = /^\s*(unit|module|chapter|part|section)\s+(\d{1,2}|[ivx]{1,4})\s*[:.\-–—]?\s*(.{0,100})$/i;
+// Matches "Unit 1", "UNIT-I", "Module 2 - ...", "Chapter III: ..." —
+// the separator between keyword and numeral is optional so compact
+// Indian-university headings (UNIT-I) parse like spaced ones (Unit 1).
+const UNIT_HEADING = /^\s*\b(unit|module|chapter|part|section)\s*[-–—:.]?\s*(\d{1,2}|[ivx]{1,4})\b\s*[:.\-–—]?\s*(.{0,100})$/i;
 
 /** Topic lines to ignore (policy/meta noise common in syllabi). */
 const NOISE =

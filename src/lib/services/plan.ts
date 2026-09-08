@@ -276,7 +276,12 @@ export type MovePlanResult = { ok: true; moved: boolean } | { ok: false; error: 
  * Keeps the engine's promises — never into the past, never double-booking a
  * topic on one day, never exceeding the day's real capacity.
  */
-export async function movePlanItem(userId: string, itemId: string, targetDate: ISODate): Promise<MovePlanResult> {
+export async function movePlanItem(
+  userId: string,
+  itemId: string,
+  targetDate: ISODate,
+  startMinutes?: number,
+): Promise<MovePlanResult> {
   const [item] = await db
     .select()
     .from(planItems)
@@ -289,17 +294,43 @@ export async function movePlanItem(userId: string, itemId: string, targetDate: I
     return { ok: false, error: `Only upcoming blocks can be moved — this one is already ${item.status}.` };
   }
   if (isPast(targetDate)) return { ok: false, error: "You can't move a block into the past." };
-  if (item.date === targetDate) return { ok: true, moved: false };
+
+  const wantsTimeChange = startMinutes !== undefined && startMinutes !== item.startMinutes;
+  if (item.date === targetDate && !wantsTimeChange) return { ok: true, moved: false };
+
+  // Time validation: must fit inside the day and not run past midnight.
+  const newStart = wantsTimeChange ? (startMinutes as number) : item.startMinutes;
+  if (newStart < 0 || newStart + item.durationMinutes > 24 * 60) {
+    return { ok: false, error: "That start time doesn't fit the block's length inside the day." };
+  }
 
   const summary = await existingPlanSummary(userId);
   const entry = summary.get(targetDate);
-  if (item.topicId && entry?.topicKeys.has(item.topicId)) {
+  if (item.topicId && entry?.topicKeys.has(item.topicId) && item.date !== targetDate) {
     return { ok: false, error: "That topic is already scheduled on this day — one pass per topic per day keeps days balanced." };
+  }
+
+  // Overlap check against the target day's pending blocks (time placement).
+  const dayItems = await db
+    .select()
+    .from(planItems)
+    .where(and(eq(planItems.userId, userId), eq(planItems.date, targetDate), eq(planItems.status, "pending")))
+    .all();
+  const newEnd = newStart + item.durationMinutes;
+  for (const p of dayItems) {
+    if (p.id === itemId || p.kind === "break") continue;
+    if (newStart < p.startMinutes + p.durationMinutes && p.startMinutes < newEnd) {
+      return {
+        ok: false,
+        error: `That time overlaps "${p.title ?? "another block"}" (${String(Math.floor(p.startMinutes / 60)).padStart(2, "0")}:${String(p.startMinutes % 60).padStart(2, "0")}). Pick a free slot.`,
+      };
+    }
   }
 
   const availability = await getAvailability(userId);
   const cap = dayCapacityMinutes(availability, targetDate);
-  const used = entry?.usedMinutes ?? 0;
+  // Same-day time changes must not double-count the block's own duration.
+  const used = (entry?.usedMinutes ?? 0) - (targetDate === item.date ? item.durationMinutes : 0);
   const capH = Math.round((cap / 60) * 10) / 10;
   const usedH = Math.round((used / 60) * 10) / 10;
   if (used + item.durationMinutes > cap) {
@@ -311,7 +342,12 @@ export async function movePlanItem(userId: string, itemId: string, targetDate: I
 
   await db
     .update(planItems)
-    .set({ date: targetDate, origin: "rescheduled", updatedAt: new Date().toISOString() })
+    .set({
+      date: targetDate,
+      ...(wantsTimeChange ? { startMinutes: newStart } : {}),
+      origin: "rescheduled",
+      updatedAt: new Date().toISOString(),
+    })
     .where(eq(planItems.id, itemId))
     .run();
   return { ok: true, moved: true };
