@@ -298,7 +298,7 @@ export function SettingsManager({
               <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
                 {aiStatus.configured
                   ? "The AI tutor, free-form chat and LLM quiz/flashcard generation are active. All model output is validated against JSON schemas."
-                  : "Planning, rescheduling, stats and structured chat run on the deterministic StudyPilot engine — no key needed. Set AI_PROVIDER, AI_API_KEY (and optionally AI_BASE_URL, AI_MODEL) in .env to unlock the tutor and free-form chat."}
+                  : "Planning, rescheduling, stats and structured chat run on the deterministic StudyPilot engine — no key needed. For Render, set AI_PRIORITY plus OPENROUTER_API_KEY/OPENROUTER_MODEL, GROK_API_KEY/GROK_MODEL, and/or GEMINI_API_KEY/GEMINI_MODEL in the service Environment Variables to unlock the AI tutor and free-form chat. Legacy AI_PROVIDER, AI_API_KEY, AI_BASE_URL, and AI_MODEL remain as fallback-only settings."}
               </p>
             </div>
           </div>

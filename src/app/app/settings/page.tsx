@@ -14,9 +14,9 @@ export default async function SettingsPage() {
   // the first keyed member of AI_PRIORITY; display shows the failover order.
   const chain = describeChain().filter((m) => m.keyed);
   const aiStatus = {
-    provider: chain.length ? chain.map((m) => m.id).join(" → ") : "openai",
+    provider: chain.length ? chain.map((m) => m.id).join(" → ") : "local deterministic engine",
     configured: chain.length > 0,
-    model: chain.length ? chain[0]!.model : "gpt-4o-mini",
+    model: chain.length ? chain[0]!.model : "local deterministic engine",
   };
 
   return (
